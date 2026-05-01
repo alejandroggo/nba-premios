@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NBA Awards — Base de Datos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c26;
+  --surface3: #22222f;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0eff8;
+  --muted: #7a7a99;
+  --accent: #e8c84a;
+  --danger: #c0392b;
+  --ok: #4ae89a;
+
+  --c-MVP:  #e8c84a;
+  --c-DPOY: #4aaee8;
+  --c-ROY:  #4ae89a;
+  --c-COY:  #e87a4a;
+  --c-MIP:  #b04ae8;
+  --c-6MAN: #e84aae;
+  --c-EOY:  #4ae8e0;
+  --c-CLTC: #e8e84a;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 0.5px solid var(--border2);
+  display: flex; align-items: center; gap: 0;
+  padding: 0 2rem;
+  overflow-x: auto;
+}
+.nav-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-right: 2rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.nav-tab {
+  padding: 14px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+/* PAGES */
+.page { display: none; max-width: 1400px; margin: 0 auto; padding: 2rem; }
+.page.active { display: block; }
+
+/* HEADER */
+.page-header { margin-bottom: 2rem; }
+.page-header h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.5rem,6vw,5rem);
+  letter-spacing: 0.04em; line-height: 0.9;
+}
+.page-header h1 span { color: var(--accent); }
+.page-header p { color: var(--muted); font-size: 13px; margin-top: 0.4rem; font-weight: 300; }
+
+/* STATS BAR */
+.stats-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.stat-pill {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.stat-pill .n { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.03em; color: var(--accent); line-height: 1; }
+.stat-pill .lbl { font-size: 12px; color: var(--muted); }
+
+/* CONTROLS */
+.controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+.search-wrap { flex: 1; min-width: 200px; position: relative; }
+.search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); opacity: 0.35; }
+input[type=text], select {
+  background: var(--surface); border: 0.5px solid var(--border2);
+  color: var(--text); border-radius: 8px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  padding: 8px 12px; outline: none; transition: border-color 0.15s;
+  width: 100%;
+}
+input[type=text] { padding-left: 34px; }
+input[type=text]:focus, select:focus { border-color: var(--accent); }
+select { cursor: pointer; width: auto; min-width: 150px; }
+select option { background: #1c1c26; }
+.sort-btn {
+  padding: 8px 13px; background: var(--surface); border: 0.5px solid var(--border2);
+  border-radius: 8px; color: var(--muted); font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+  white-space: nowrap; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.sort-btn:hover { border-color: var(--accent); color: var(--text); }
+.sort-btn.active { border-color: var(--accent); color: var(--accent); }
+
+/* MAIN TABLE */
+.table-wrap { border: 0.5px solid var(--border2); border-radius: 12px; overflow: hidden; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 860px; }
+thead th {
+  font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.1em;
+  color: var(--muted); padding: 10px 10px; border-bottom: 0.5px solid var(--border2);
+  text-align: center; cursor: pointer; white-space: nowrap; user-select: none;
+  background: var(--surface);
+}
+thead th:first-child { text-align: left; }
+thead th:hover { color: var(--text); }
+thead th.sorted { color: var(--accent); }
+tbody tr { border-bottom: 0.5px solid var(--border); cursor: pointer; transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+td { padding: 10px 10px; vertical-align: middle; text-align: center; }
+td:first-child { text-align: left; }
+.team-name { font-weight: 500; font-size: 14px; white-space: nowrap; }
+.award-n { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; }
+.award-n.zero { color: var(--border2); }
+.total-n { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--accent); }
+.last-cell { font-size: 12px; text-align: left; white-space: nowrap; }
+.last-badge {
+  display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 6px;
+  border-radius: 4px; margin-right: 4px; letter-spacing: 0.03em;
+}
+.missing-cell { font-size: 12px; color: var(--danger); text-align: left; white-space: normal; line-height: 1.4; min-width: 140px; }
+.complete-badge { color: var(--ok); font-size: 12px; font-weight: 500; }
+
+/* LOADER */
+.loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 4rem; color: var(--muted); font-size: 14px; }
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-msg { text-align: center; padding: 2rem; color: var(--danger); font-size: 14px; }
+.no-results { text-align: center; padding: 2rem; color: var(--muted); font-size: 14px; }
+
+/* DETAIL PANEL */
+#detail-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  align-items: flex-start; justify-content: flex-end;
+}
+#detail-overlay.open { display: flex; }
+#detail-panel {
+  width: min(520px, 100vw);
+  height: 100vh;
+  background: var(--surface);
+  border-left: 0.5px solid var(--border2);
+  overflow-y: auto;
+  padding: 2rem;
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.panel-close {
+  float: right; background: none; border: 0.5px solid var(--border2);
+  color: var(--muted); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  font-size: 13px; transition: all 0.15s;
+}
+.panel-close:hover { border-color: var(--accent); color: var(--text); }
+.panel-team {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.2rem; letter-spacing: 0.04em; line-height: 1;
+  margin: 2rem 0 0.25rem; clear: both;
+}
+.panel-sub { color: var(--muted); font-size: 13px; margin-bottom: 1.5rem; }
+.panel-awards-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1.5rem;
+}
+.panel-award-card {
+  background: var(--surface2); border-radius: 8px; padding: 0.6rem;
+  text-align: center; border: 0.5px solid var(--border);
+}
+.panel-award-card .pa-n { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; line-height: 1; }
+.panel-award-card .pa-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.04em; }
+.panel-award-card.zero .pa-n { color: var(--border2); }
+.winners-section { margin-bottom: 1.5rem; }
+.winners-section h3 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.1em;
+  color: var(--muted); margin-bottom: 0.75rem; padding-bottom: 6px;
+  border-bottom: 0.5px solid var(--border);
+}
+.winner-row {
+  display: flex; gap: 10px; padding: 7px 0;
+  border-bottom: 0.5px solid var(--border); font-size: 13px; align-items: flex-start;
+}
+.winner-row:last-child { border-bottom: none; }
+.winner-name { font-weight: 500; flex: 1; }
+.winner-years { color: var(--muted); font-size: 12px; text-align: right; flex-shrink: 0; }
+.panel-missing { background: rgba(192,57,43,0.08); border: 0.5px solid rgba(192,57,43,0.25); border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; color: var(--danger); margin-top: 0.5rem; }
+.panel-missing strong { display: block; margin-bottom: 4px; font-weight: 500; }
+
+/* AWARD PAGE */
+.award-page-header {
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;
+}
+.award-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.award-page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem,5vw,4rem); letter-spacing: 0.04em; line-height: 1; }
+.award-table-wrap { border: 0.5px solid var(--border2); border-radius: 12px; overflow: hidden; overflow-x: auto; }
+.award-table { width: 100%; border-collapse: collapse; }
+.award-table thead th {
+  font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.1em;
+  color: var(--muted); padding: 10px 14px; border-bottom: 0.5px solid var(--border2);
+  text-align: left; background: var(--surface); user-select: none;
+}
+.award-table tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.1s; }
+.award-table tbody tr:last-child { border-bottom: none; }
+.award-table tbody tr:hover { background: var(--surface2); }
+.award-table td { padding: 10px 14px; font-size: 14px; vertical-align: middle; }
+.award-count { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; }
+.winner-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  font-size: 12px; padding: 3px 9px; border-radius: 20px;
+  background: var(--surface2); border: 0.5px solid var(--border2);
+  color: var(--text); white-space: nowrap;
+}
+.chip .yr { color: var(--muted); font-size: 11px; margin-left: 3px; }
+
+/* LEGEND */
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
+.leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+.leg-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* FOOTER */
+footer { text-align: center; padding: 3rem 2rem; font-size: 12px; color: var(--muted); border-top: 0.5px solid var(--border); margin-top: 2rem; }
+footer a { color: var(--accent); text-decoration: none; }
+
+@media (max-width: 600px) {
+  .page { padding: 1rem; }
+  .panel-awards-grid { grid-template-columns: repeat(4,1fr); }
+  nav { padding: 0 1rem; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo" onclick="showPage('overview')">NBA⚡</div>
+  <div class="nav-tab active" data-page="overview" onclick="showPage('overview')">Equipos</div>
+  <div class="nav-tab" data-page="MVP" onclick="showPage('MVP')">MVP</div>
+  <div class="nav-tab" data-page="DPOY" onclick="showPage('DPOY')">DPOY</div>
+  <div class="nav-tab" data-page="ROY" onclick="showPage('ROY')">ROY</div>
+  <div class="nav-tab" data-page="COY" onclick="showPage('COY')">COY</div>
+  <div class="nav-tab" data-page="MIP" onclick="showPage('MIP')">MIP</div>
+  <div class="nav-tab" data-page="6MAN" onclick="showPage('6MAN')">6th Man</div>
+  <div class="nav-tab" data-page="EOY" onclick="showPage('EOY')">EOY</div>
+  <div class="nav-tab" data-page="CLTC" onclick="showPage('CLTC')">Clutch</div>
+</nav>
+
+<!-- OVERVIEW PAGE -->
+<div class="page active" id="page-overview">
+  <div class="page-header">
+    <h1>NBA <span>Awards</span></h1>
+    <p>Premios individuales por franquicia · datos en vivo desde Google Sheets</p>
+  </div>
+
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:var(--c-MVP)"></div>MVP</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--c-DPOY)"></div>DPOY</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--c-ROY)"></div>ROY</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--c-COY)"></div>COY</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--c-MIP)"></div>MIP</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--c-6MAN)"></div>6th Man</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--c-EOY)"></div>EOY</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--c-CLTC)"></div>Clutch</div>
+  </div>
+
+  <div class="stats-bar" id="ov-stats"></div>
+
+  <div class="controls">
+    <div class="search-wrap">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="ov-search" placeholder="Buscar equipo…" oninput="ovFilter()" />
+    </div>
+    <select id="ov-prize" onchange="ovFilter()">
+      <option value="">Todos los premios</option>
+      <option value="MVP">Con MVP</option>
+      <option value="DPOY">Con DPOY</option>
+      <option value="ROY">Con ROY</option>
+      <option value="COY">Con COY</option>
+      <option value="MIP">Con MIP</option>
+      <option value="6MAN">Con 6th Man</option>
+      <option value="EOY">Con EOY</option>
+      <option value="CLTC">Con Clutch</option>
+    </select>
+    <select id="ov-miss" onchange="ovFilter()">
+      <option value="">Todos</option>
+      <option value="complete">Colección completa</option>
+      <option value="missing">Con faltantes</option>
+      <option value="none">Sin ningún premio</option>
+    </select>
+    <button class="sort-btn active" id="sb-TOTAL" onclick="ovSort('TOTAL')">Total ↓</button>
+    <button class="sort-btn" id="sb-team" onclick="ovSort('team')">A–Z ↕</button>
+    <button class="sort-btn" id="sb-missing" onclick="ovSort('missing')">Faltantes ↕</button>
+    <button class="sort-btn" id="sb-year" onclick="ovSort('year')">Año ↕</button>
+  </div>
+
+  <div id="ov-loader" class="loader"><div class="spinner"></div>Cargando equipos…</div>
+  <div class="table-wrap" id="ov-table-wrap" style="display:none">
+    <table id="ov-table">
+      <thead>
+        <tr>
+          <th onclick="ovSort('team')" id="th-team">Equipo</th>
+          <th onclick="ovSort('MVP')" id="th-MVP" style="color:var(--c-MVP)">MVP</th>
+          <th onclick="ovSort('DPOY')" id="th-DPOY" style="color:var(--c-DPOY)">DPOY</th>
+          <th onclick="ovSort('ROY')" id="th-ROY" style="color:var(--c-ROY)">ROY</th>
+          <th onclick="ovSort('COY')" id="th-COY" style="color:var(--c-COY)">COY</th>
+          <th onclick="ovSort('MIP')" id="th-MIP" style="color:var(--c-MIP)">MIP</th>
+          <th onclick="ovSort('6MAN')" id="th-6MAN" style="color:var(--c-6MAN)">6th</th>
+          <th onclick="ovSort('EOY')" id="th-EOY" style="color:var(--c-EOY)">EOY</th>
+          <th onclick="ovSort('CLTC')" id="th-CLTC" style="color:var(--c-CLTC)">CLT</th>
+          <th onclick="ovSort('TOTAL')" id="th-TOTAL" class="sorted">Total</th>
+          <th onclick="ovSort('year')" id="th-year">Último</th>
+          <th>Faltantes</th>
+        </tr>
+      </thead>
+      <tbody id="ov-tbody"></tbody>
+    </table>
+  </div>
+  <div id="ov-no-results" class="no-results" style="display:none">Sin resultados.</div>
+  <p style="font-size:12px;color:var(--muted);margin-top:0.75rem">Haz clic en un equipo para ver sus ganadores.</p>
+</div>
+
+<!-- AWARD PAGES (MVP, DPOY, etc.) -->
+<div class="page" id="page-MVP"></div>
+<div class="page" id="page-DPOY"></div>
+<div class="page" id="page-ROY"></div>
+<div class="page" id="page-COY"></div>
+<div class="page" id="page-MIP"></div>
+<div class="page" id="page-6MAN"></div>
+<div class="page" id="page-EOY"></div>
+<div class="page" id="page-CLTC"></div>
+
+<!-- DETAIL PANEL -->
+<div id="detail-overlay" onclick="closePanel(event)">
+  <div id="detail-panel">
+    <button class="panel-close" onclick="closePanel()">✕ Cerrar</button>
+    <div id="panel-content"></div>
+  </div>
+</div>
+
+<footer>
+  Datos desde <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRq7CVeGDmpkP17dqZBSe864F8fyBz3Xj9d5sKuokXb0Tbi4BdCmY1imHuwnKyGYGer1ZSrn31t-cJ1/pub?output=csv" target="_blank">Google Sheets</a> · NBA Awards Database
+</footer>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRq7CVeGDmpkP17dqZBSe864F8fyBz3Xj9d5sKuokXb0Tbi4BdCmY1imHuwnKyGYGer1ZSrn31t-cJ1/pub?output=csv';
+const GID = {
+  overview: '',
+  MVP:  '1470164100',
+  DPOY: '1125294535',
+  ROY:  '260825702',
+  COY:  '1462942093',
+  MIP:  '1578265612',
+  '6MAN': '623211912',
+  EOY:  '1008193483',
+  CLTC: '1229579974',
+};
+const AWARDS = ['MVP','DPOY','ROY','COY','MIP','6MAN','EOY','CLTC'];
+const AWARD_LABEL = { MVP:'MVP', DPOY:'Def. Player of the Year', ROY:'Rookie of the Year', COY:'Coach of the Year', MIP:'Most Improved Player', '6MAN':'Sixth Man of the Year', EOY:'Executive of the Year', CLTC:'Clutch Player of the Year' };
+const COLORS = { MVP:'#e8c84a', DPOY:'#4aaee8', ROY:'#4ae89a', COY:'#e87a4a', MIP:'#b04ae8', '6MAN':'#e84aae', EOY:'#4ae8e0', CLTC:'#e8e84a' };
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let ovData = [];         // overview rows
+let awardData = {};      // { MVP: [{team, winners:[{name,years}], count}] }
+let ovSortKey = 'TOTAL';
+let ovSortDir = -1;
+const loaded = {};       // track which pages loaded
+
+// ─── CSV FETCH ────────────────────────────────────────────────────────────────
+async function fetchCSV(gid) {
+  const url = gid ? `${BASE}&gid=${gid}&single=true` : BASE;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.text();
+}
+
+function parseCSV(text) {
+  // detect separator (tab vs comma)
+  const firstLine = text.split('\n')[0];
+  const sep = firstLine.includes('\t') ? '\t' : ',';
+  return text.trim().split('\n').map(line => line.split(sep).map(c => c.replace(/^"|"$/g,'').trim()));
+}
+
+function num(v) { const n = parseInt(v); return isNaN(n) ? 0 : n; }
+
+// ─── OVERVIEW ────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const text = await fetchCSV('');
+    const rows = parseCSV(text);
+    const headers = rows[0].map(h => h.toUpperCase().trim());
+
+    // find column indices
+    const ci = (candidates) => {
+      for (const c of candidates) {
+        const i = headers.findIndex(h => h.replace(/\s/g,'') === c.replace(/\s/g,'').toUpperCase());
+        if (i !== -1) return i;
+      }
+      return -1;
+    };
+
+    const iTeam    = ci(['EQUIPO','TEAM']) || 0;
+    const iMVP     = ci(['MVP']);
+    const iDPOY    = ci(['DPOY']);
+    const iROY     = ci(['ROY']);
+    const iCOY     = ci(['COY']);
+    const iMIP     = ci(['MIP']);
+    const i6MAN    = ci(['6THM','6TH','6MAN','SEXTOMAN','SEXTO']);
+    const iEOY     = ci(['EOY']);
+    const iCLTC    = ci(['CLT','CLTC','CLUTCH']);
+    const iTOTAL   = ci(['TOTAL']);
+    const iULTIMO  = ci(['ÚLTIMO','ULTIMO','LAST']);
+    const iANO     = ci(['AÑO','ANO','YEAR']);
+    const iMISSING = ci(['MISSING','FALTANTES']);
+    const iMISSLST = iMISSING !== -1 ? iMISSING + 1 : -1;
+
+    const colMap = { MVP: iMVP, DPOY: iDPOY, ROY: iROY, COY: iCOY, MIP: iMIP, '6MAN': i6MAN, EOY: iEOY, CLTC: iCLTC };
+
+    ovData = rows.slice(1).filter(r => r[iTeam]).map(r => {
+      const awards = {};
+      AWARDS.forEach(a => { awards[a] = colMap[a] !== -1 ? num(r[colMap[a]]) : 0; });
+      const total = iTOTAL !== -1 ? num(r[iTOTAL]) : AWARDS.reduce((s,a) => s + awards[a], 0);
+
+      let lastPrize = '', lastYear = 0;
+      if (iULTIMO !== -1 && r[iULTIMO]) {
+        // could be "MIP" in one col and year in next
+        lastPrize = r[iULTIMO].trim();
+        if (iANO !== -1 && r[iANO]) lastYear = parseInt(r[iANO]) || 0;
+        else {
+          // or "MIP 2025" in same col
+          const m = lastPrize.match(/^(.*?)\s+(\d{4})$/);
+          if (m) { lastPrize = m[1]; lastYear = parseInt(m[2]); }
+        }
+      }
+      if (!lastYear && iANO !== -1 && r[iANO]) lastYear = parseInt(r[iANO]) || 0;
+
+      let missingCount = 0, missingList = '';
+      if (iMISSING !== -1) {
+        missingCount = num(r[iMISSING]);
+        if (iMISSLST !== -1 && r[iMISSLST]) missingList = r[iMISSLST].trim();
+      }
+      if (!missingList) {
+        const m = AWARDS.filter(a => awards[a] === 0);
+        missingCount = m.length;
+        missingList = m.join(', ');
+      }
+
+      return { team: r[iTeam].trim(), awards, total, lastPrize, lastYear, missingCount, missingList };
+    });
+
+    document.getElementById('ov-loader').style.display = 'none';
+    document.getElementById('ov-table-wrap').style.display = 'block';
+    ovRender();
+    ovStats();
+  } catch(e) {
+    document.getElementById('ov-loader').innerHTML = `<p class="error-msg">Error cargando datos: ${e.message}</p>`;
+  }
+}
+
+function ovRender() {
+  let d = ovFilter(true);
+  d = ovSortData(d);
+  const tbody = document.getElementById('ov-tbody');
+  if (!d.length) {
+    tbody.innerHTML = '';
+    document.getElementById('ov-no-results').style.display = 'block';
+    return;
+  }
+  document.getElementById('ov-no-results').style.display = 'none';
+
+  tbody.innerHTML = d.map(r => {
+    const aCells = AWARDS.map(a => {
+      const v = r.awards[a];
+      return `<td class="award-n${v===0?' zero':''}" style="${v>0?'color:'+COLORS[a]:''}">${v||'—'}</td>`;
+    }).join('');
+
+    const lastHtml = r.lastPrize
+      ? `<span class="last-badge" style="background:${COLORS[r.lastPrize]||'#333'};color:#000">${r.lastPrize}</span><span style="color:var(--text);font-weight:500">${r.lastYear||''}</span>`
+      : `<span style="opacity:0.3">—</span>`;
+
+    const missHtml = r.missingCount === 0
+      ? `<span class="complete-badge">✓ Completo</span>`
+      : `<span style="color:var(--danger);font-weight:500">${r.missingCount}</span> <span style="color:var(--muted);font-size:12px">${r.missingList}</span>`;
+
+    return `<tr onclick="openPanel('${r.team.replace(/'/g,"\\'")}')">
+      <td class="team-name">${r.team}</td>
+      ${aCells}
+      <td class="total-n">${r.total}</td>
+      <td class="last-cell">${lastHtml}</td>
+      <td class="missing-cell">${missHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+function ovFilter(returnData=false) {
+  const q = document.getElementById('ov-search').value.toLowerCase();
+  const fp = document.getElementById('ov-prize').value;
+  const fm = document.getElementById('ov-miss').value;
+  const d = ovData.filter(r => {
+    if (q && !r.team.toLowerCase().includes(q)) return false;
+    if (fp && r.awards[fp] === 0) return false;
+    if (fm === 'complete' && r.missingCount > 0) return false;
+    if (fm === 'missing' && r.missingCount === 0) return false;
+    if (fm === 'none' && r.total > 0) return false;
+    return true;
+  });
+  if (returnData) return d;
+  ovRender();
+  ovStats(d);
+}
+
+function ovSortData(d) {
+  return [...d].sort((a,b) => {
+    let av, bv;
+    if (AWARDS.includes(ovSortKey)) { av = a.awards[ovSortKey]; bv = b.awards[ovSortKey]; }
+    else if (ovSortKey === 'TOTAL') { av = a.total; bv = b.total; }
+    else if (ovSortKey === 'year') { av = a.lastYear; bv = b.lastYear; }
+    else if (ovSortKey === 'missing') { av = a.missingCount; bv = b.missingCount; }
+    else { av = a.team.toLowerCase(); bv = b.team.toLowerCase(); }
+    return av < bv ? ovSortDir : av > bv ? -ovSortDir : 0;
+  });
+}
+
+function ovSort(key) {
+  if (ovSortKey === key) ovSortDir *= -1; else { ovSortKey = key; ovSortDir = -1; }
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  const sb = document.getElementById('sb-'+key);
+  if (sb) { sb.classList.add('active'); sb.textContent = key.toUpperCase().replace('TEAM','A–Z') + (ovSortDir===-1?' ↓':' ↑'); }
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  const th = document.getElementById('th-'+key);
+  if (th) th.classList.add('sorted');
+  ovRender();
+}
+
+function ovStats(d) {
+  const data = d || ovData;
+  document.getElementById('ov-stats').innerHTML = `
+    <div class="stat-pill"><span class="n">${data.length}</span><span class="lbl">equipos</span></div>
+    <div class="stat-pill"><span class="n">${data.reduce((s,r)=>s+r.total,0)}</span><span class="lbl">premios totales</span></div>
+    <div class="stat-pill"><span class="n">${data.filter(r=>r.missingCount===0).length}</span><span class="lbl">colección completa</span></div>
+    <div class="stat-pill"><span class="n">${data.filter(r=>r.total===0).length}</span><span class="lbl">sin ningún premio</span></div>`;
+}
+
+// ─── AWARD PAGES ─────────────────────────────────────────────────────────────
+async function loadAwardPage(award) {
+  const page = document.getElementById('page-'+award);
+  if (loaded[award]) return;
+  loaded[award] = true;
+
+  const color = COLORS[award];
+  page.innerHTML = `
+    <div class="award-page-header">
+      <div class="award-dot" style="background:${color}"></div>
+      <div>
+        <div class="award-page-title" style="color:${color}">${award}</div>
+        <div style="color:var(--muted);font-size:13px">${AWARD_LABEL[award]}</div>
+      </div>
+    </div>
+    <div class="loader" id="al-${award}"><div class="spinner"></div>Cargando…</div>
+    <div class="award-table-wrap" id="at-${award}" style="display:none">
+      <table class="award-table">
+        <thead><tr>
+          <th style="width:200px">Equipo</th>
+          <th style="width:60px;text-align:center">Total</th>
+          <th>Ganadores</th>
+        </tr></thead>
+        <tbody id="ab-${award}"></tbody>
+      </table>
+    </div>`;
+
+  try {
+    const text = await fetchCSV(GID[award]);
+    const rows = parseCSV(text);
+    // headers: col0=empty?, col1=EQUIPO, col2..N=ganadores, last=count
+    // detect EQUIPO col
+    const headers = rows[0];
+    const teamIdx = headers.findIndex(h => h.toUpperCase().includes('EQUIPO') || h.toUpperCase().includes('TEAM'));
+    const tIdx = teamIdx !== -1 ? teamIdx : 1;
+
+    // find count col (last numeric-looking header or the award name)
+    const countIdx = headers.findIndex(h => h.toUpperCase() === award.toUpperCase() || h.toUpperCase() === 'TOTAL' || h.toUpperCase() === 'COUNT');
+
+    awardData[award] = [];
+
+    const tbody = document.getElementById('ab-'+award);
+    const tableRows = rows.slice(1).filter(r => (r[tIdx]||'').trim());
+
+    tableRows.forEach(r => {
+      const team = (r[tIdx]||'').trim();
+      if (!team) return;
+
+      // winners are in columns between tIdx+1 and (countIdx or end)
+      const end = countIdx !== -1 ? countIdx : r.length;
+      const winners = [];
+      for (let i = tIdx+1; i < end; i++) {
+        const cell = (r[i]||'').trim();
+        if (!cell) continue;
+        // parse "Name YYYY, YYYY" or "Name YYYY"
+        const m = cell.match(/^(.+?)\s+([\d,\s]+)$/);
+        if (m) {
+          const name = m[1].trim();
+          const years = m[2].split(',').map(y=>y.trim()).filter(Boolean);
+          winners.push({ name, years });
+        } else {
+          winners.push({ name: cell, years: [] });
+        }
+      }
+
+      const count = countIdx !== -1 ? num(r[countIdx]) : winners.reduce((s,w)=>s+w.years.length,0) || winners.length;
+      awardData[award].push({ team, winners, count });
+    });
+
+    // sort by count desc
+    awardData[award].sort((a,b) => b.count - a.count);
+
+    tbody.innerHTML = awardData[award].map(r => {
+      const chips = r.winners.map(w =>
+        w.years.length
+          ? w.years.map(y => `<span class="chip">${w.name}<span class="yr">${y}</span></span>`).join('')
+          : `<span class="chip">${w.name}</span>`
+      ).join('');
+
+      return `<tr>
+        <td style="font-weight:500;font-size:14px">${r.team}</td>
+        <td class="award-count" style="color:${color};text-align:center">${r.count||'—'}</td>
+        <td><div class="winner-chips">${chips}</div></td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('al-'+award).style.display = 'none';
+    document.getElementById('at-'+award).style.display = 'block';
+  } catch(e) {
+    document.getElementById('al-'+award).innerHTML = `<p class="error-msg">Error: ${e.message}</p>`;
+  }
+}
+
+// ─── DETAIL PANEL ─────────────────────────────────────────────────────────────
+async function openPanel(teamName) {
+  const row = ovData.find(r => r.team === teamName);
+  if (!row) return;
+
+  document.getElementById('detail-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // award cards
+  const cards = AWARDS.map(a => {
+    const v = row.awards[a];
+    return `<div class="panel-award-card${v===0?' zero':''}">
+      <div class="pa-n" style="${v>0?'color:'+COLORS[a]:''}">${v||'—'}</div>
+      <div class="pa-lbl" style="${v>0?'color:'+COLORS[a]:''}">${a}</div>
+    </div>`;
+  }).join('');
+
+  const lastHtml = row.lastPrize
+    ? `<span class="last-badge" style="background:${COLORS[row.lastPrize]||'#333'};color:#000;font-size:12px;padding:3px 8px;border-radius:5px">${row.lastPrize}</span> <strong>${row.lastYear}</strong>`
+    : '—';
+
+  const missHtml = row.missingCount === 0
+    ? `<div class="complete-badge" style="font-size:14px">✓ Colección completa</div>`
+    : `<div class="panel-missing"><strong>Faltantes (${row.missingCount})</strong>${row.missingList}</div>`;
+
+  document.getElementById('panel-content').innerHTML = `
+    <div class="panel-team">${row.team}</div>
+    <div class="panel-sub">${row.total} premio${row.total!==1?'s':''} en total · Último: ${lastHtml}</div>
+    <div class="panel-awards-grid">${cards}</div>
+    ${missHtml}
+    <div class="winners-section" id="panel-winners" style="margin-top:1.5rem">
+      <div class="loader" style="padding:2rem"><div class="spinner"></div></div>
+    </div>`;
+
+  // load winners for each award this team has
+  await loadAllAwardData();
+  renderPanelWinners(row);
+}
+
+async function loadAllAwardData() {
+  await Promise.all(AWARDS.map(async a => {
+    if (awardData[a]) return;
+    // trigger full load
+    if (!loaded[a]) await loadAwardPage(a);
+  }));
+}
+
+function renderPanelWinners(row) {
+  const container = document.getElementById('panel-winners');
+  if (!container) return;
+
+  let html = '';
+  AWARDS.forEach(a => {
+    if (row.awards[a] === 0) return;
+    const teamAwardData = (awardData[a]||[]).find(d => d.team === row.team);
+    if (!teamAwardData || !teamAwardData.winners.length) return;
+
+    html += `<h3 style="color:${COLORS[a]}">${a} — ${AWARD_LABEL[a]}</h3>`;
+    teamAwardData.winners.forEach(w => {
+      html += `<div class="winner-row">
+        <span class="winner-name">${w.name}</span>
+        <span class="winner-years">${w.years.join(', ')}</span>
+      </div>`;
+    });
+    html += '<div style="margin-bottom:1rem"></div>';
+  });
+
+  container.innerHTML = html || '<p style="color:var(--muted);font-size:13px">No se encontraron ganadores individuales.</p>';
+}
+
+function closePanel(e) {
+  if (e && e.target !== document.getElementById('detail-overlay')) return;
+  document.getElementById('detail-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ─── NAV ──────────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelector(`.nav-tab[data-page="${name}"]`).classList.add('active');
+
+  if (name !== 'overview' && !loaded[name]) {
+    loadAwardPage(name);
+  }
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────────
+loadOverview();
+</script>
+</body>
+</html>
