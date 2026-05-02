@@ -609,18 +609,20 @@ async function loadAwardPage(award) {
   try {
     const text = await fetchCSV(GID[award]);
     const rows = parseCSV(text);
-    // headers: col0=empty?, col1=EQUIPO, col2..N=ganadores, last=count
-    // detect EQUIPO col
-    const headers = rows[0];
+
+    // Row 0 may be blank — find the real header row (contains EQUIPO or TEAM)
+    let headerRowIdx = 0;
+    for (let i = 0; i < Math.min(rows.length, 5); i++) {
+      if (rows[i].some(h => h.toUpperCase().includes('EQUIPO') || h.toUpperCase().includes('TEAM'))) {
+        headerRowIdx = i; break;
+      }
+    }
+    const headers = rows[headerRowIdx];
     const teamIdx = headers.findIndex(h => h.toUpperCase().includes('EQUIPO') || h.toUpperCase().includes('TEAM'));
     const tIdx = teamIdx !== -1 ? teamIdx : 1;
 
-    // find count col (last numeric-looking header or the award name)
-    // Last column is always the total count (may have empty header or award name)
-    // Detect it: last column index where at least one data row has a numeric value
-    // Safe approach: it's always the last column in the sheet
+    // Last col = count (header is award name, empty, or TOTAL)
     const lastColIdx = rows.reduce((max, r) => Math.max(max, r.length - 1), 0);
-    // Verify it looks like a count col (header is empty, award name, or "total")
     const lastHeader = (headers[lastColIdx] || '').toUpperCase().replace(/\s/g,'');
     const countIdx = (lastHeader === '' || lastHeader === award.toUpperCase() || lastHeader === 'TOTAL' || lastHeader === 'COUNT')
       ? lastColIdx : -1;
@@ -628,7 +630,7 @@ async function loadAwardPage(award) {
     awardData[award] = [];
 
     const tbody = document.getElementById('ab-'+award);
-    const tableRows = rows.slice(1, -1).filter(r => {
+    const tableRows = rows.slice(headerRowIdx + 1).filter(r => {
       const t = (r[tIdx]||'').trim().replace(/\s+/g,'');
       // Skip empty, numeric-only, TOTAL, or rows where first winner col is numeric (sum row)
       if (!t) return false;
