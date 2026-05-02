@@ -410,64 +410,68 @@ async function loadOverview() {
   try {
     const text = await fetchCSV('');
     const rows = parseCSV(text);
-    const headers = rows[0].map(h => h.toUpperCase().trim());
+    // Normalize: strip accents, uppercase, no spaces
+    const norm = s => s.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s/g,'');
+    const rawHeaders = rows[0];
+    const headers = rawHeaders.map(norm);
 
-    // find column indices
     const ci = (candidates) => {
       for (const c of candidates) {
-        const i = headers.findIndex(h => h.replace(/\s/g,'') === c.replace(/\s/g,'').toUpperCase());
+        const i = headers.findIndex(h => h === norm(c));
         if (i !== -1) return i;
       }
       return -1;
     };
 
-    const iTeam    = ci(['EQUIPO','TEAM']) || 0;
+    // Exact layout: EQUIPO|MVP|DPOY|ROY|COY|MIP|6thM|EOY|CLT|TOTAL|ÚLTIMO|[año]|MISSING|[lista]
+    const iTeam    = ci(['EQUIPO','TEAM']);
     const iMVP     = ci(['MVP']);
     const iDPOY    = ci(['DPOY']);
     const iROY     = ci(['ROY']);
     const iCOY     = ci(['COY']);
     const iMIP     = ci(['MIP']);
-    const i6MAN    = ci(['6THM','6TH','6MAN','SEXTOMAN','SEXTO']);
+    const i6MAN    = ci(['6THM','6TH','6MAN','6THMAN']);
     const iEOY     = ci(['EOY']);
     const iCLTC    = ci(['CLT','CLTC','CLUTCH']);
     const iTOTAL   = ci(['TOTAL']);
-    const iULTIMO  = ci(['ÚLTIMO','ULTIMO','LAST']);
-    const iANO     = ci(['AÑO','ANO','YEAR']);
-    const iMISSING = ci(['MISSING','FALTANTES']);
+    const iULTIMO  = ci(['ULTIMO','LAST','ULTIM']); // norm() strips accents
+
+    // ULTIMO occupies 2 cols (prize | year), MISSING occupies 2 cols (count | list)
+    const iANO     = iULTIMO !== -1 ? iULTIMO + 1 : -1;
+    const iMISSING = iULTIMO !== -1 ? iULTIMO + 2 : ci(['MISSING','FALTANTES']);
     const iMISSLST = iMISSING !== -1 ? iMISSING + 1 : -1;
 
     const colMap = { MVP: iMVP, DPOY: iDPOY, ROY: iROY, COY: iCOY, MIP: iMIP, '6MAN': i6MAN, EOY: iEOY, CLTC: iCLTC };
+    const tIdx = iTeam !== -1 ? iTeam : 0;
 
-    ovData = rows.slice(1).filter(r => r[iTeam]).map(r => {
+    console.log('Headers:', rawHeaders);
+    console.log('Indices:', {iTeam, iMVP, iDPOY, iROY, iCOY, iMIP, i6MAN, iEOY, iCLTC, iTOTAL, iULTIMO, iANO, iMISSING, iMISSLST});
+
+    ovData = rows.slice(1).filter(r => (r[tIdx]||'').trim()).map(r => {
       const awards = {};
-      AWARDS.forEach(a => { awards[a] = colMap[a] !== -1 ? num(r[colMap[a]]) : 0; });
-      const total = iTOTAL !== -1 ? num(r[iTOTAL]) : AWARDS.reduce((s,a) => s + awards[a], 0);
+      AWARDS.forEach(a => { awards[a] = colMap[a] !== -1 ? num(r[colMap[a]] || '') : 0; });
+      const total = iTOTAL !== -1 ? num(r[iTOTAL] || '') : AWARDS.reduce((s,a) => s + awards[a], 0);
 
+      // ÚLTIMO: prize in col, year in col+1
       let lastPrize = '', lastYear = 0;
-      if (iULTIMO !== -1 && r[iULTIMO]) {
-        // could be "MIP" in one col and year in next
-        lastPrize = r[iULTIMO].trim();
-        if (iANO !== -1 && r[iANO]) lastYear = parseInt(r[iANO]) || 0;
-        else {
-          // or "MIP 2025" in same col
-          const m = lastPrize.match(/^(.*?)\s+(\d{4})$/);
-          if (m) { lastPrize = m[1]; lastYear = parseInt(m[2]); }
-        }
+      if (iULTIMO !== -1) {
+        lastPrize = (r[iULTIMO] || '').trim();
+        if (iANO !== -1) lastYear = parseInt(r[iANO] || '') || 0;
       }
-      if (!lastYear && iANO !== -1 && r[iANO]) lastYear = parseInt(r[iANO]) || 0;
 
+      // MISSING: count in col, list in col+1
       let missingCount = 0, missingList = '';
       if (iMISSING !== -1) {
-        missingCount = num(r[iMISSING]);
-        if (iMISSLST !== -1 && r[iMISSLST]) missingList = r[iMISSLST].trim();
+        missingCount = num(r[iMISSING] || '');
+        if (iMISSLST !== -1) missingList = (r[iMISSLST] || '').trim();
       }
-      if (!missingList) {
+      if (missingCount === 0 && !missingList) {
         const m = AWARDS.filter(a => awards[a] === 0);
         missingCount = m.length;
         missingList = m.join(', ');
       }
 
-      return { team: r[iTeam].trim(), awards, total, lastPrize, lastYear, missingCount, missingList };
+      return { team: r[tIdx].trim(), awards, total, lastPrize, lastYear, missingCount, missingList };
     });
 
     document.getElementById('ov-loader').style.display = 'none';
@@ -617,11 +621,12 @@ async function loadAwardPage(award) {
       for (let i = tIdx+1; i < end; i++) {
         const cell = (r[i]||'').trim();
         if (!cell) continue;
-        // parse "Name YYYY, YYYY" or "Name YYYY"
-        const m = cell.match(/^(.+?)\s+([\d,\s]+)$/);
-        if (m) {
-          const name = m[1].trim();
-          const years = m[2].split(',').map(y=>y.trim()).filter(Boolean);
+        // Format: "Firstname Lastname 1990, 1991, 1992"
+        // Find name vs years by splitting on first 4-digit year
+        const yearMatch = cell.match(/^(.*?)\s+(\d{4}(?:,\s*\d{4})*)$/);
+        if (yearMatch) {
+          const name = yearMatch[1].trim();
+          const years = yearMatch[2].split(',').map(y => y.trim()).filter(Boolean);
           winners.push({ name, years });
         } else {
           winners.push({ name: cell, years: [] });
