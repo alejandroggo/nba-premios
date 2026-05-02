@@ -628,7 +628,10 @@ async function loadAwardPage(award) {
     awardData[award] = [];
 
     const tbody = document.getElementById('ab-'+award);
-    const tableRows = rows.slice(1).filter(r => (r[tIdx]||'').trim());
+    const tableRows = rows.slice(1).filter(r => {
+      const t = (r[tIdx]||'').trim();
+      return t && !/^\d+$/.test(t) && t.toUpperCase() !== 'TOTAL';
+    });
 
     tableRows.forEach(r => {
       const team = (r[tIdx]||'').trim();
