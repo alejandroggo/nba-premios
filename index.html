@@ -400,7 +400,19 @@ function parseCSV(text) {
   // detect separator (tab vs comma)
   const firstLine = text.split('\n')[0];
   const sep = firstLine.includes('\t') ? '\t' : ',';
-  return text.trim().split('\n').map(line => line.split(sep).map(c => c.replace(/^"|"$/g,'').trim()));
+  // Handle quoted fields that may contain commas
+  return text.trim().split('\n').map(line => {
+    const cells = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === sep && !inQ) { cells.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
 }
 
 function num(v) { const n = parseInt(v); return isNaN(n) ? 0 : n; }
@@ -604,7 +616,14 @@ async function loadAwardPage(award) {
     const tIdx = teamIdx !== -1 ? teamIdx : 1;
 
     // find count col (last numeric-looking header or the award name)
-    const countIdx = headers.findIndex(h => h.toUpperCase() === award.toUpperCase() || h.toUpperCase() === 'TOTAL' || h.toUpperCase() === 'COUNT');
+    // Last column is always the total count (may have empty header or award name)
+    // Detect it: last column index where at least one data row has a numeric value
+    // Safe approach: it's always the last column in the sheet
+    const lastColIdx = rows.reduce((max, r) => Math.max(max, r.length - 1), 0);
+    // Verify it looks like a count col (header is empty, award name, or "total")
+    const lastHeader = (headers[lastColIdx] || '').toUpperCase().replace(/\s/g,'');
+    const countIdx = (lastHeader === '' || lastHeader === award.toUpperCase() || lastHeader === 'TOTAL' || lastHeader === 'COUNT')
+      ? lastColIdx : -1;
 
     awardData[award] = [];
 
@@ -615,25 +634,27 @@ async function loadAwardPage(award) {
       const team = (r[tIdx]||'').trim();
       if (!team) return;
 
-      // winners are in columns between tIdx+1 and (countIdx or end)
+      // Winners are between tIdx+1 and countIdx (exclusive)
       const end = countIdx !== -1 ? countIdx : r.length;
       const winners = [];
       for (let i = tIdx+1; i < end; i++) {
         const cell = (r[i]||'').trim();
         if (!cell) continue;
         // Format: "Firstname Lastname 1990, 1991, 1992"
-        // Find name vs years by splitting on first 4-digit year
+        // Split on the first 4-digit year
         const yearMatch = cell.match(/^(.*?)\s+(\d{4}(?:,\s*\d{4})*)$/);
         if (yearMatch) {
           const name = yearMatch[1].trim();
           const years = yearMatch[2].split(',').map(y => y.trim()).filter(Boolean);
           winners.push({ name, years });
         } else {
+          // Pure number = stray count cell, skip it
+          if (/^\d+$/.test(cell)) continue;
           winners.push({ name: cell, years: [] });
         }
       }
 
-      const count = countIdx !== -1 ? num(r[countIdx]) : winners.reduce((s,w)=>s+w.years.length,0) || winners.length;
+      const count = countIdx !== -1 ? num(r[countIdx]) : winners.reduce((s,w) => s + Math.max(w.years.length, 1), 0);
       awardData[award].push({ team, winners, count });
     });
 
