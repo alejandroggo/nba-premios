@@ -628,9 +628,18 @@ async function loadAwardPage(award) {
     awardData[award] = [];
 
     const tbody = document.getElementById('ab-'+award);
-    const tableRows = rows.slice(1).filter(r => {
-      const t = (r[tIdx]||'').trim();
-      return t && !/^\d+$/.test(t) && t.toUpperCase() !== 'TOTAL';
+    const tableRows = rows.slice(1, -1).filter(r => {
+      const t = (r[tIdx]||'').trim().replace(/\s+/g,'');
+      // Skip empty, numeric-only, TOTAL, or rows where first winner col is numeric (sum row)
+      if (!t) return false;
+      if (/^\d+$/.test(t)) return false;
+      if (t.toUpperCase() === 'TOTAL') return false;
+      // Extra: skip if the team cell contains only digits after stripping spaces
+      if (/^[\d,\s]+$/.test((r[tIdx]||''))) return false;
+      // Extra: skip if next cell after team is purely numeric (dead giveaway of a sum row)
+      const nextCell = (r[tIdx+1]||'').trim();
+      if (/^\d+$/.test(nextCell) && nextCell !== '') return false;
+      return true;
     });
 
     tableRows.forEach(r => {
