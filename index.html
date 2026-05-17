@@ -245,13 +245,27 @@ td:first-child { text-align: left; }
 .leg-dot { width: 7px; height: 7px; border-radius: 50%; }
 
 /* FOOTER */
-footer { text-align: center; padding: 3rem 2rem; font-size: 12px; color: var(--muted); border-top: 0.5px solid var(--border); margin-top: 2rem; }
-footer a { color: var(--accent); text-decoration: none; }
+.ag-footer {
+  display: flex; flex-wrap: wrap; gap: 2rem;
+  align-items: flex-start; justify-content: space-between;
+  padding: 2.5rem 2rem; border-top: 0.5px solid var(--border);
+  margin-top: 2rem; font-size: 12px; color: var(--muted);
+}
+.ag-footer-brand { display: flex; flex-direction: column; gap: 3px; min-width: 140px; }
+.ag-footer-brand strong { color: var(--text); font-size: 13px; }
+.ag-footer-projects, .ag-footer-pubs { display: flex; flex-direction: column; gap: 6px; }
+.ag-footer-projects a, .ag-footer-pubs a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+.ag-footer-projects a:hover, .ag-footer-pubs a:hover { color: var(--accent); }
+.ag-footer-meta { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+.ag-footer-data { font-size: 11px; margin-top: 4px; }
+.ag-footer-data a { color: var(--accent); text-decoration: none; }
 
 @media (max-width: 600px) {
   .page { padding: 1rem; }
   .panel-awards-grid { grid-template-columns: repeat(4,1fr); }
   nav { padding: 0 1rem; }
+  .ag-footer { flex-direction: column; gap: 1.5rem; }
+  .ag-footer-meta { text-align: left; }
 }
 </style>
 </head>
@@ -362,8 +376,29 @@ footer a { color: var(--accent); text-decoration: none; }
   </div>
 </div>
 
-<footer>
-  Datos desde <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRq7CVeGDmpkP17dqZBSe864F8fyBz3Xj9d5sKuokXb0Tbi4BdCmY1imHuwnKyGYGer1ZSrn31t-cJ1/pub?output=csv" target="_blank">Google Sheets</a> · NBA Awards Database
+<footer class="ag-footer">
+  <div class="ag-footer-brand">
+    <strong>Alejandro Gaitán</strong>
+    <span>Periodismo NBA en español</span>
+  </div>
+  <nav class="ag-footer-projects" aria-label="Otros proyectos">
+    <a href="https://alejandroggo.github.io/portfolio/" rel="noopener noreferrer">Portfolio</a>
+    <a href="https://alejandroggo.github.io/nba-rankings/" rel="noopener noreferrer">Rankings NBA</a>
+    <a href="https://alejandroggo.github.io/nba-offseason-2026/" rel="noopener noreferrer">Off-Season 2026</a>
+    <a href="https://alejandroggo.github.io/espanoles-nba/" rel="noopener noreferrer">Españoles en la NBA</a>
+    <a href="https://alejandroggo.github.io/NBA-espanol/" rel="noopener noreferrer">NBA en Español</a>
+  </nav>
+  <nav class="ag-footer-pubs" aria-label="Publicaciones">
+    <a href="https://alejandroggo.substack.com" rel="noopener noreferrer">Substack</a>
+    <a href="https://www.relevo.com/autor/alejandro-gaitan-5475.html" rel="noopener noreferrer">Relevo</a>
+    <a href="https://www.gigantes.com" rel="noopener noreferrer">Gigantes</a>
+    <a href="https://alejandrogaitan.com" rel="noopener noreferrer">alejandrogaitan.com</a>
+  </nav>
+  <div class="ag-footer-meta">
+    <span>© Alejandro Gaitán</span>
+    <span>Última actualización: <time id="ag-last-update" datetime=""></time></span>
+    <span class="ag-footer-data">Datos: <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRq7CVeGDmpkP17dqZBSe864F8fyBz3Xj9d5sKuokXb0Tbi4BdCmY1imHuwnKyGYGer1ZSrn31t-cJ1/pub?output=csv" rel="noopener noreferrer">Google Sheets</a> · NBA Awards Database</span>
+  </div>
 </footer>
 
 <script>
