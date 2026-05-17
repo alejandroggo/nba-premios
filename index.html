@@ -260,6 +260,13 @@ td:first-child { text-align: left; }
 .ag-footer-data { font-size: 11px; margin-top: 4px; }
 .ag-footer-data a { color: var(--accent); text-decoration: none; }
 
+/* DATE BADGE */
+.ag-date-badge {
+  display: inline-block; font-size: 11px; color: var(--muted);
+  background: var(--surface); border: 0.5px solid var(--border2);
+  border-radius: 6px; padding: 2px 8px; margin-top: 0.5rem;
+}
+
 @media (max-width: 600px) {
   .page { padding: 1rem; }
   .panel-awards-grid { grid-template-columns: repeat(4,1fr); }
@@ -289,6 +296,7 @@ td:first-child { text-align: left; }
   <div class="page-header">
     <h1>NBA <span>Awards</span></h1>
     <p>Premios individuales por franquicia · datos en vivo desde Google Sheets</p>
+    <span id="ag-date-badge" class="ag-date-badge" style="display:none"></span>
   </div>
 
   <div class="legend">
@@ -455,10 +463,27 @@ function parseCSV(text) {
 
 function num(v) { const n = parseInt(v); return isNaN(n) ? 0 : n; }
 
+// ─── LAST UPDATE DATE ─────────────────────────────────────────────────────────
+const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function setUpdateDate(raw) {
+  if (!raw) return;
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return;
+  const visible = `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  const iso = d.toISOString().slice(0, 10);
+  const timeEl = document.getElementById('ag-last-update');
+  if (timeEl) { timeEl.textContent = visible; timeEl.setAttribute('datetime', iso); }
+  const badge = document.getElementById('ag-date-badge');
+  if (badge) { badge.textContent = `Datos a: ${visible}`; badge.style.display = 'inline-block'; }
+}
+
 // ─── OVERVIEW ────────────────────────────────────────────────────────────────
 async function loadOverview() {
   try {
-    const text = await fetchCSV('');
+    const _r = await fetch(BASE);
+    if (!_r.ok) throw new Error(`HTTP ${_r.status}`);
+    setUpdateDate(_r.headers.get('Last-Modified'));
+    const text = await _r.text();
     const rows = parseCSV(text);
     // Normalize: strip accents, uppercase, no spaces
     const norm = s => s.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s/g,'');
