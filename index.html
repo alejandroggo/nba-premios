@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
+<script>(function(){try{var p=localStorage.getItem('ag-theme')||'auto';document.documentElement.dataset.theme=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="/nba-premios/favicon.svg">
 <link rel="icon" type="image/x-icon" href="/nba-premios/favicon.ico">
@@ -10,18 +11,26 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
 <style>
 :root {
-  --bg: #0a0a0f;
-  --surface: #13131a;
-  --surface2: #1c1c26;
-  --surface3: #22222f;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.13);
-  --text: #f0eff8;
-  --muted: #7a7a99;
-  --accent: #e8c84a;
-  --danger: #c0392b;
-  --ok: #4ae89a;
-
+  --bg: #f5f4fb;
+  --surface: #ffffff;
+  --surface2: #eeecf8;
+  --surface3: #e5e3f2;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #0d0d14;
+  --muted: #6b6b8a;
+  --accent: #b89a10;
+  --accent-contrast: #000000;
+  --danger: #b52a1e;
+  --ok: #1a9e5e;
+  --bg-glass: rgba(245,244,251,0.92);
+  /* canonical aliases */
+  --surface-2: var(--surface2);
+  --surface-3: var(--surface3);
+  --border-2: var(--border2);
+  --text-muted: var(--muted);
+  --success: var(--ok);
+  /* award colors — theme-invariant */
   --c-MVP:  #e8c84a;
   --c-DPOY: #4aaee8;
   --c-ROY:  #4ae89a;
@@ -31,6 +40,21 @@
   --c-EOY:  #4ae8e0;
   --c-CLTC: #e8e84a;
 }
+[data-theme="dark"] {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c26;
+  --surface3: #22222f;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0eff8;
+  --muted: #7a7a99;
+  --accent: #e8c84a;
+  --accent-contrast: #000000;
+  --danger: #c0392b;
+  --ok: #4ae89a;
+  --bg-glass: rgba(10,10,15,0.92);
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
@@ -38,7 +62,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 /* NAV */
 nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(10,10,15,0.92);
+  background: var(--bg-glass);
   backdrop-filter: blur(12px);
   border-bottom: 0.5px solid var(--border2);
   display: flex; align-items: center; gap: 0;
@@ -111,7 +135,7 @@ input[type=text], select {
 input[type=text] { padding-left: 34px; }
 input[type=text]:focus, select:focus { border-color: var(--accent); }
 select { cursor: pointer; width: auto; min-width: 150px; }
-select option { background: #1c1c26; }
+select option { background: var(--surface2); }
 .sort-btn {
   padding: 8px 13px; background: var(--surface); border: 0.5px solid var(--border2);
   border-radius: 8px; color: var(--muted); font-family: 'DM Sans', sans-serif;
@@ -260,6 +284,16 @@ td:first-child { text-align: left; }
 .ag-footer-data { font-size: 11px; margin-top: 4px; }
 .ag-footer-data a { color: var(--accent); text-decoration: none; }
 
+/* THEME TOGGLE */
+.theme-toggle {
+  margin-left: auto; flex-shrink: 0;
+  padding: 5px 11px; background: var(--surface2); border: 0.5px solid var(--border2);
+  color: var(--muted); border-radius: 7px; font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--text); }
+
 /* DATE BADGE */
 .ag-date-badge {
   display: inline-block; font-size: 11px; color: var(--muted);
@@ -289,6 +323,7 @@ td:first-child { text-align: left; }
   <div class="nav-tab" data-page="6MAN" onclick="showPage('6MAN')">6th Man</div>
   <div class="nav-tab" data-page="EOY" onclick="showPage('EOY')">EOY</div>
   <div class="nav-tab" data-page="CLTC" onclick="showPage('CLTC')">Clutch</div>
+  <button id="theme-toggle" class="theme-toggle" onclick="cycleTheme()" aria-label="Tema: Auto">🖥 Auto</button>
 </nav>
 
 <!-- OVERVIEW PAGE -->
@@ -846,6 +881,29 @@ function showPage(name) {
     loadAwardPage(name);
   }
 }
+
+// ─── THEME ────────────────────────────────────────────────────────────────────
+const THEME_CYCLE = ['auto','light','dark'];
+const THEME_LABELS = { auto:'🖥 Auto', light:'☀ Claro', dark:'🌙 Oscuro' };
+let _themePref = 'auto';
+const _mqDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme(pref) {
+  _themePref = pref;
+  const resolved = pref === 'auto' ? (_mqDark.matches ? 'dark' : 'light') : pref;
+  document.documentElement.dataset.theme = resolved;
+  try { localStorage.setItem('ag-theme', pref); } catch(e) {}
+  const btn = document.getElementById('theme-toggle');
+  if (btn) { btn.textContent = THEME_LABELS[pref]; btn.setAttribute('aria-label', `Tema: ${THEME_LABELS[pref]}`); }
+}
+
+function cycleTheme() {
+  applyTheme(THEME_CYCLE[(THEME_CYCLE.indexOf(_themePref) + 1) % THEME_CYCLE.length]);
+}
+
+_mqDark.addEventListener('change', () => { if (_themePref === 'auto') applyTheme('auto'); });
+try { _themePref = localStorage.getItem('ag-theme') || 'auto'; } catch(e) {}
+applyTheme(_themePref);
 
 // ─── INIT ──────────────────────────────────────────────────────────────────────
 loadOverview();
