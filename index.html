@@ -2,276 +2,395 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
+<script>(function(){try{var p=localStorage.getItem('ag-theme')||'auto';document.documentElement.dataset.theme=p==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/nba-premios/favicon.svg">
+<link rel="icon" type="image/x-icon" href="/nba-premios/favicon.ico">
+<link rel="apple-touch-icon" href="/nba-premios/apple-touch-icon.png">
 <title>NBA Awards — Base de Datos</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
+/* ═══ TOKENS ══════════════════════════════════════════════════════════════════ */
 :root {
-  --bg: #0a0a0f;
-  --surface: #13131a;
-  --surface2: #1c1c26;
-  --surface3: #22222f;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.13);
-  --text: #f0eff8;
-  --muted: #7a7a99;
-  --accent: #e8c84a;
-  --danger: #c0392b;
-  --ok: #4ae89a;
-
-  --c-MVP:  #e8c84a;
-  --c-DPOY: #4aaee8;
-  --c-ROY:  #4ae89a;
-  --c-COY:  #e87a4a;
-  --c-MIP:  #b04ae8;
-  --c-6MAN: #e84aae;
-  --c-EOY:  #4ae8e0;
-  --c-CLTC: #e8e84a;
+  --bg:           #f4f4ef;
+  --surface:      #ffffff;
+  --surface-2:    #ebebe6;
+  --border:       #ddddd8;
+  --text:         #111111;
+  --text-muted:   #666660;
+  /* accent — amber/gold (nba-premios) */
+  --accent:          #b45309;
+  --accent-light:    #fef3c7;
+  --accent-contrast: #ffffff;
+  --accent-hover:    #92400e;
+  /* semantic */
+  --success:       #16a34a;
+  --success-light: #dcfce7;
+  --danger:        #dc2626;
+  --danger-light:  #fee2e2;
+  --warning:       #d97706;
+  --warning-light: #fef3c7;
+  /* spacing */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px;
+  --space-6:24px; --space-8:32px; --space-10:40px; --space-12:48px; --space-16:64px;
+  /* typography */
+  --font-xs:0.75rem; --font-sm:0.875rem; --font-base:1rem; --font-md:1.125rem;
+  --font-lg:1.5rem; --font-xl:2rem; --font-2xl:3rem; --font-3xl:4.5rem;
+  /* shape */
+  --radius-sm:4px; --radius-md:8px; --radius-lg:12px; --radius-xl:16px; --radius-full:9999px;
+  /* shadow */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.14);
+  --transition: 150ms ease;
+  --bg-glass: rgba(255,255,255,0.92);
+  /* backward-compat aliases */
+  --surface2: var(--surface-2); --surface3: var(--surface-2); --surface-3: var(--surface-2);
+  --border2: var(--border); --border-2: var(--border);
+  --muted: var(--text-muted); --ok: var(--success);
+  /* award colors — theme-invariant */
+  --c-MVP:#e8c84a; --c-DPOY:#4aaee8; --c-ROY:#4ae89a; --c-COY:#e87a4a;
+  --c-MIP:#b04ae8; --c-6MAN:#e84aae; --c-EOY:#4ae8e0; --c-CLTC:#e8e84a;
 }
+[data-theme="dark"] {
+  --bg:           #0f1117;
+  --surface:      #1a1f2e;
+  --surface-2:    #242938;
+  --border:       #2d3348;
+  --text:         #e8eaf0;
+  --text-muted:   #8892a4;
+  /* accent dark — amber */
+  --accent:          #fbbf24;
+  --accent-light:    #451a03;
+  --accent-contrast: #000000;
+  --accent-hover:    #fcd34d;
+  --success:       #22c55e; --success-light: #14532d;
+  --danger:        #f87171; --danger-light:  #7f1d1d;
+  --warning:       #fbbf24; --warning-light: #78350f;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.40);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.50);
+  --bg-glass: rgba(26,31,46,0.92);
+}
+
+/* ═══ RESET ════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg); color: var(--text); min-height: 100vh;
+}
 
-/* NAV */
+/* ═══ SCROLLBAR ════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-full); }
+
+/* ═══ NAV ══════════════════════════════════════════════════════════════════════ */
 nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(10,10,15,0.92);
+  background: var(--bg-glass);
   backdrop-filter: blur(12px);
-  border-bottom: 0.5px solid var(--border2);
+  border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 0;
-  padding: 0 2rem;
-  overflow-x: auto;
+  padding: 0 var(--space-6);
+  height: 56px;
 }
+.nav-tablist { display: flex; align-items: center; flex: 1; overflow-x: auto; min-width: 0; height: 100%; }
 .nav-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.4rem;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-  margin-right: 2rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-  cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem;
+  letter-spacing: 0.06em; color: var(--accent);
+  margin-right: var(--space-6); white-space: nowrap;
+  flex-shrink: 0; cursor: pointer;
+  background: none; border: none; padding: 0;
 }
 .nav-tab {
-  padding: 14px 16px;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s;
-  white-space: nowrap;
-  flex-shrink: 0;
-  text-transform: uppercase;
+  display: inline-flex; align-items: center; height: 56px;
+  padding: 0 var(--space-4);
+  font-size: var(--font-xs); font-weight: 500; letter-spacing: 0.05em;
+  color: var(--text-muted); cursor: pointer;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  transition: color var(--transition), border-color var(--transition);
+  white-space: nowrap; flex-shrink: 0; text-transform: uppercase;
 }
 .nav-tab:hover { color: var(--text); }
-.nav-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-/* PAGES */
-.page { display: none; max-width: 1400px; margin: 0 auto; padding: 2rem; }
+/* ═══ PAGES ════════════════════════════════════════════════════════════════════ */
+.page { display: none; max-width: 1400px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
 .page.active { display: block; }
 
-/* HEADER */
-.page-header { margin-bottom: 2rem; }
-.page-header h1 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2.5rem,6vw,5rem);
-  letter-spacing: 0.04em; line-height: 0.9;
+/* ═══ HERO ═════════════════════════════════════════════════════════════════════ */
+.page-header { margin-bottom: var(--space-8); }
+.ag-hero {
+  font-size: var(--font-2xl); font-weight: 800;
+  line-height: 1.1; letter-spacing: -0.03em; color: var(--text);
 }
-.page-header h1 span { color: var(--accent); }
-.page-header p { color: var(--muted); font-size: 13px; margin-top: 0.4rem; font-weight: 300; }
+.ag-hero em { font-style: italic; font-weight: 400; color: var(--text-muted); }
+.page-header p { color: var(--text-muted); font-size: var(--font-sm); margin-top: var(--space-2); }
 
-/* STATS BAR */
-.stats-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+/* ═══ STATS BAR ════════════════════════════════════════════════════════════════ */
+.stats-bar { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-6); }
 .stat-pill {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  display: flex; align-items: baseline; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4);
+  display: flex; align-items: baseline; gap: var(--space-2);
+  box-shadow: var(--shadow-sm);
 }
 .stat-pill .n { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.03em; color: var(--accent); line-height: 1; }
-.stat-pill .lbl { font-size: 12px; color: var(--muted); }
+.stat-pill .lbl { font-size: var(--font-xs); color: var(--text-muted); }
 
-/* CONTROLS */
-.controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+/* ═══ CONTROLS ═════════════════════════════════════════════════════════════════ */
+.controls { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-5); align-items: center; }
 .search-wrap { flex: 1; min-width: 200px; position: relative; }
-.search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); opacity: 0.35; }
+.search-wrap svg { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); opacity: 0.4; pointer-events: none; }
 input[type=text], select {
-  background: var(--surface); border: 0.5px solid var(--border2);
-  color: var(--text); border-radius: 8px;
-  font-family: 'DM Sans', sans-serif; font-size: 14px;
-  padding: 8px 12px; outline: none; transition: border-color 0.15s;
-  width: 100%;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--radius-md);
+  font-family: inherit; font-size: var(--font-sm);
+  padding: var(--space-2) var(--space-3);
+  outline: none; transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%; min-height: 44px;
 }
 input[type=text] { padding-left: 34px; }
-input[type=text]:focus, select:focus { border-color: var(--accent); }
+input[type=text]:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
 select { cursor: pointer; width: auto; min-width: 150px; }
-select option { background: #1c1c26; }
+select option { background: var(--surface); }
 .sort-btn {
-  padding: 8px 13px; background: var(--surface); border: 0.5px solid var(--border2);
-  border-radius: 8px; color: var(--muted); font-family: 'DM Sans', sans-serif;
-  font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s;
-  white-space: nowrap; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); color: var(--text-muted);
+  font-family: inherit; font-size: var(--font-xs); font-weight: 500;
+  cursor: pointer; transition: border-color var(--transition), color var(--transition), background var(--transition);
+  white-space: nowrap; letter-spacing: 0.04em; text-transform: uppercase; min-height: 36px;
 }
 .sort-btn:hover { border-color: var(--accent); color: var(--text); }
-.sort-btn.active { border-color: var(--accent); color: var(--accent); }
+.sort-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-/* MAIN TABLE */
-.table-wrap { border: 0.5px solid var(--border2); border-radius: 12px; overflow: hidden; overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 860px; }
+/* ═══ TABLE ════════════════════════════════════════════════════════════════════ */
+.table-wrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto; box-shadow: var(--shadow-sm); }
+table { width: 100%; border-collapse: collapse; min-width: 860px; font-size: var(--font-sm); }
 thead th {
-  font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.1em;
-  color: var(--muted); padding: 10px 10px; border-bottom: 0.5px solid var(--border2);
+  background: var(--surface-2); color: var(--text-muted);
+  font-size: var(--font-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: var(--space-2) var(--space-3); border-bottom: 2px solid var(--border);
   text-align: center; cursor: pointer; white-space: nowrap; user-select: none;
-  background: var(--surface);
+  position: sticky; top: 56px;
 }
 thead th:first-child { text-align: left; }
 thead th:hover { color: var(--text); }
 thead th.sorted { color: var(--accent); }
-tbody tr { border-bottom: 0.5px solid var(--border); cursor: pointer; transition: background 0.1s; }
+tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--transition); }
 tbody tr:last-child { border-bottom: none; }
-tbody tr:hover { background: var(--surface2); }
-td { padding: 10px 10px; vertical-align: middle; text-align: center; }
+tbody tr:hover { background: var(--surface-2); }
+td { padding: var(--space-2) var(--space-3); vertical-align: middle; text-align: center; }
 td:first-child { text-align: left; }
-.team-name { font-weight: 500; font-size: 14px; white-space: nowrap; }
+.team-name { font-weight: 500; font-size: var(--font-sm); white-space: nowrap; }
 .award-n { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; }
-.award-n.zero { color: var(--border2); }
+.award-n.zero { color: var(--border); }
 .total-n { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--accent); }
-.last-cell { font-size: 12px; text-align: left; white-space: nowrap; }
+.last-cell { font-size: var(--font-xs); text-align: left; white-space: nowrap; }
 .last-badge {
-  display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 6px;
-  border-radius: 4px; margin-right: 4px; letter-spacing: 0.03em;
+  display: inline-flex; align-items: center;
+  font-size: var(--font-xs); font-weight: 500;
+  padding: 2px var(--space-2); border-radius: var(--radius-full);
+  margin-right: var(--space-1); letter-spacing: 0.03em;
 }
-.missing-cell { font-size: 12px; color: var(--danger); text-align: left; white-space: normal; line-height: 1.4; min-width: 140px; }
-.complete-badge { color: var(--ok); font-size: 12px; font-weight: 500; }
+.missing-cell { font-size: var(--font-xs); color: var(--danger); text-align: left; white-space: normal; line-height: 1.4; min-width: 140px; }
+.complete-badge {
+  display: inline-flex; align-items: center;
+  font-size: var(--font-xs); font-weight: 500;
+  padding: 2px var(--space-2); border-radius: var(--radius-full);
+  background: var(--success-light); color: var(--success);
+}
 
-/* LOADER */
-.loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 4rem; color: var(--muted); font-size: 14px; }
-.spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+/* ═══ LOADER ═══════════════════════════════════════════════════════════════════ */
+.loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4); padding: var(--space-10); color: var(--text-muted); font-size: var(--font-sm); }
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.error-msg { text-align: center; padding: 2rem; color: var(--danger); font-size: 14px; }
-.no-results { text-align: center; padding: 2rem; color: var(--muted); font-size: 14px; }
+.error-msg { text-align: center; padding: var(--space-8); color: var(--danger); font-size: var(--font-sm); }
+.no-results { text-align: center; padding: var(--space-8); color: var(--text-muted); font-size: var(--font-sm); }
 
-/* DETAIL PANEL */
+/* ═══ DETAIL PANEL ════════════════════════════════════════════════════════════ */
 #detail-overlay {
   display: none; position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
   align-items: flex-start; justify-content: flex-end;
 }
 #detail-overlay.open { display: flex; }
 #detail-panel {
-  width: min(520px, 100vw);
-  height: 100vh;
-  background: var(--surface);
-  border-left: 0.5px solid var(--border2);
-  overflow-y: auto;
-  padding: 2rem;
-  animation: slideIn 0.2s ease;
+  width: min(520px, 100vw); height: 100vh;
+  background: var(--surface); border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg); overflow-y: auto;
+  padding: var(--space-6); animation: slideIn 0.2s ease;
 }
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 .panel-close {
-  float: right; background: none; border: 0.5px solid var(--border2);
-  color: var(--muted); border-radius: 6px; padding: 4px 10px; cursor: pointer;
-  font-size: 13px; transition: all 0.15s;
+  float: right; background: transparent; border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3); cursor: pointer;
+  font-size: var(--font-xs); font-family: inherit;
+  transition: border-color var(--transition), color var(--transition);
 }
 .panel-close:hover { border-color: var(--accent); color: var(--text); }
 .panel-team {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.2rem; letter-spacing: 0.04em; line-height: 1;
-  margin: 2rem 0 0.25rem; clear: both;
+  font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem;
+  letter-spacing: 0.04em; line-height: 1;
+  margin: var(--space-8) 0 var(--space-2); clear: both;
 }
-.panel-sub { color: var(--muted); font-size: 13px; margin-bottom: 1.5rem; }
-.panel-awards-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1.5rem;
-}
+.panel-sub { color: var(--text-muted); font-size: var(--font-sm); margin-bottom: var(--space-6); }
+.panel-awards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); margin-bottom: var(--space-6); }
 .panel-award-card {
-  background: var(--surface2); border-radius: 8px; padding: 0.6rem;
-  text-align: center; border: 0.5px solid var(--border);
+  background: var(--surface-2); border-radius: var(--radius-md);
+  padding: var(--space-3); text-align: center; border: 1px solid var(--border);
 }
 .panel-award-card .pa-n { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; line-height: 1; }
-.panel-award-card .pa-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.04em; }
-.panel-award-card.zero .pa-n { color: var(--border2); }
-.winners-section { margin-bottom: 1.5rem; }
+.panel-award-card .pa-lbl { font-size: 10px; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.04em; }
+.panel-award-card.zero .pa-n { color: var(--border); }
+.winners-section { margin-bottom: var(--space-6); }
 .winners-section h3 {
-  font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.1em;
-  color: var(--muted); margin-bottom: 0.75rem; padding-bottom: 6px;
-  border-bottom: 0.5px solid var(--border);
+  font-size: var(--font-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: var(--space-3); padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
 }
 .winner-row {
-  display: flex; gap: 10px; padding: 7px 0;
-  border-bottom: 0.5px solid var(--border); font-size: 13px; align-items: flex-start;
+  display: flex; gap: var(--space-3); padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border); font-size: var(--font-sm); align-items: flex-start;
 }
 .winner-row:last-child { border-bottom: none; }
 .winner-name { font-weight: 500; flex: 1; }
-.winner-years { color: var(--muted); font-size: 12px; text-align: right; flex-shrink: 0; }
-.panel-missing { background: rgba(192,57,43,0.08); border: 0.5px solid rgba(192,57,43,0.25); border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; color: var(--danger); margin-top: 0.5rem; }
-.panel-missing strong { display: block; margin-bottom: 4px; font-weight: 500; }
-
-/* AWARD PAGE */
-.award-page-header {
-  display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;
+.winner-years { color: var(--text-muted); font-size: var(--font-xs); text-align: right; flex-shrink: 0; }
+.panel-missing {
+  background: var(--danger-light); border: 1px solid var(--danger); opacity: 0.85;
+  border-radius: var(--radius-md); padding: var(--space-3) var(--space-4);
+  font-size: var(--font-sm); color: var(--danger); margin-top: var(--space-2);
 }
+.panel-missing strong { display: block; margin-bottom: var(--space-1); font-weight: 600; }
+
+/* ═══ AWARD PAGE ══════════════════════════════════════════════════════════════ */
+.award-page-header { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-8); }
 .award-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
 .award-page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem,5vw,4rem); letter-spacing: 0.04em; line-height: 1; }
-.award-table-wrap { border: 0.5px solid var(--border2); border-radius: 12px; overflow: hidden; overflow-x: auto; }
-.award-table { width: 100%; border-collapse: collapse; }
+.award-table-wrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto; box-shadow: var(--shadow-sm); }
+.award-table { width: 100%; border-collapse: collapse; font-size: var(--font-sm); }
 .award-table thead th {
-  font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.1em;
-  color: var(--muted); padding: 10px 14px; border-bottom: 0.5px solid var(--border2);
-  text-align: left; background: var(--surface); user-select: none;
+  background: var(--surface-2); color: var(--text-muted);
+  font-size: var(--font-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: var(--space-2) var(--space-4); border-bottom: 2px solid var(--border);
+  text-align: left; user-select: none; position: sticky; top: 56px;
 }
-.award-table tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.1s; }
+.award-table tbody tr { border-bottom: 1px solid var(--border); transition: background var(--transition); }
 .award-table tbody tr:last-child { border-bottom: none; }
-.award-table tbody tr:hover { background: var(--surface2); }
-.award-table td { padding: 10px 14px; font-size: 14px; vertical-align: middle; }
+.award-table tbody tr:hover { background: var(--surface-2); }
+.award-table td { padding: var(--space-2) var(--space-4); vertical-align: middle; }
 .award-count { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; }
-.winner-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.winner-chips { display: flex; flex-wrap: wrap; gap: var(--space-1); }
 .chip {
-  font-size: 12px; padding: 3px 9px; border-radius: 20px;
-  background: var(--surface2); border: 0.5px solid var(--border2);
+  display: inline-flex; align-items: center;
+  font-size: var(--font-xs); padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--surface-2); border: 1px solid var(--border);
   color: var(--text); white-space: nowrap;
 }
-.chip .yr { color: var(--muted); font-size: 11px; margin-left: 3px; }
+.chip .yr { color: var(--text-muted); font-size: 11px; margin-left: var(--space-1); }
 
-/* LEGEND */
-.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
-.leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+/* ═══ LEGEND ══════════════════════════════════════════════════════════════════ */
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }
+.leg { display: flex; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); }
 .leg-dot { width: 7px; height: 7px; border-radius: 50%; }
 
-/* FOOTER */
-footer { text-align: center; padding: 3rem 2rem; font-size: 12px; color: var(--muted); border-top: 0.5px solid var(--border); margin-top: 2rem; }
-footer a { color: var(--accent); text-decoration: none; }
+/* ═══ FOOTER ══════════════════════════════════════════════════════════════════ */
+.ag-footer {
+  display: flex; flex-wrap: wrap; gap: var(--space-8);
+  align-items: flex-start; justify-content: space-between;
+  padding: var(--space-8) var(--space-6);
+  background: var(--surface); border-top: 1px solid var(--border);
+  margin-top: var(--space-8); font-size: var(--font-sm); color: var(--text-muted);
+}
+.ag-footer-brand { display: flex; flex-direction: column; gap: var(--space-1); min-width: 140px; }
+.ag-footer-brand strong { color: var(--text); font-size: var(--font-sm); font-weight: 600; }
+.ag-footer-projects, .ag-footer-pubs { display: flex; flex-direction: column; gap: var(--space-2); }
+.ag-footer-projects a, .ag-footer-pubs a { color: var(--text-muted); text-decoration: none; transition: color var(--transition); }
+.ag-footer-projects a:hover, .ag-footer-pubs a:hover { color: var(--accent); }
+.ag-footer-meta { display: flex; flex-direction: column; gap: var(--space-1); text-align: right; }
+.ag-footer-data { font-size: var(--font-xs); margin-top: var(--space-1); }
+.ag-footer-data a { color: var(--accent); text-decoration: none; }
 
+/* ═══ THEME TOGGLE ════════════════════════════════════════════════════════════ */
+.theme-toggle {
+  margin-left: auto; flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: var(--radius-sm);
+  font-family: inherit; font-size: var(--font-xs); font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color var(--transition), color var(--transition);
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--text); }
+
+/* ═══ DATE BADGE ══════════════════════════════════════════════════════════════ */
+.ag-date-badge {
+  display: inline-flex; align-items: center;
+  font-size: var(--font-xs); color: var(--text-muted);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-full); padding: 2px var(--space-3); margin-top: var(--space-2);
+}
+
+/* ═══ BADGE VARIANTS ══════════════════════════════════════════════════════════ */
+.badge-accent  { background: var(--accent-light);  color: var(--accent); }
+.badge-success { background: var(--success-light); color: var(--success); }
+.badge-danger  { background: var(--danger-light);  color: var(--danger); }
+.badge-warning { background: var(--warning-light); color: var(--warning); }
+.badge-neutral { background: var(--surface-2);     color: var(--text-muted); }
+
+/* ═══ FOCUS ═══════════════════════════════════════════════════════════════════ */
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+.nav-logo:focus-visible, .nav-tab:focus-visible { outline-offset: -3px; }
+tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ═══ RESPONSIVE ══════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
-  .page { padding: 1rem; }
+  .page { padding: var(--space-4); }
+  nav { padding: 0 var(--space-4); height: 48px; }
+  .nav-tablist { height: 48px; }
+  .nav-tab { height: 48px; }
+  thead th { top: 48px; }
   .panel-awards-grid { grid-template-columns: repeat(4,1fr); }
-  nav { padding: 0 1rem; }
+  .ag-footer { flex-direction: column; gap: var(--space-6); }
+  .ag-footer-meta { text-align: left; }
 }
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="nav-logo" onclick="showPage('overview')">NBA⚡</div>
-  <div class="nav-tab active" data-page="overview" onclick="showPage('overview')">Equipos</div>
-  <div class="nav-tab" data-page="MVP" onclick="showPage('MVP')">MVP</div>
-  <div class="nav-tab" data-page="DPOY" onclick="showPage('DPOY')">DPOY</div>
-  <div class="nav-tab" data-page="ROY" onclick="showPage('ROY')">ROY</div>
-  <div class="nav-tab" data-page="COY" onclick="showPage('COY')">COY</div>
-  <div class="nav-tab" data-page="MIP" onclick="showPage('MIP')">MIP</div>
-  <div class="nav-tab" data-page="6MAN" onclick="showPage('6MAN')">6th Man</div>
-  <div class="nav-tab" data-page="EOY" onclick="showPage('EOY')">EOY</div>
-  <div class="nav-tab" data-page="CLTC" onclick="showPage('CLTC')">Clutch</div>
+<nav aria-label="Navegación principal">
+  <button class="nav-logo" onclick="showPage('overview')" aria-label="NBA Awards — inicio">NBA<span aria-hidden="true">⚡</span></button>
+  <div class="nav-tablist" role="tablist" aria-label="Secciones">
+    <button class="nav-tab active" role="tab" id="tab-overview" data-page="overview" aria-selected="true"  aria-controls="page-overview" onclick="showPage('overview')">Equipos</button>
+    <button class="nav-tab" role="tab" id="tab-MVP"      data-page="MVP"      aria-selected="false" aria-controls="page-MVP"      onclick="showPage('MVP')">MVP</button>
+    <button class="nav-tab" role="tab" id="tab-DPOY"     data-page="DPOY"     aria-selected="false" aria-controls="page-DPOY"     onclick="showPage('DPOY')">DPOY</button>
+    <button class="nav-tab" role="tab" id="tab-ROY"      data-page="ROY"      aria-selected="false" aria-controls="page-ROY"      onclick="showPage('ROY')">ROY</button>
+    <button class="nav-tab" role="tab" id="tab-COY"      data-page="COY"      aria-selected="false" aria-controls="page-COY"      onclick="showPage('COY')">COY</button>
+    <button class="nav-tab" role="tab" id="tab-MIP"      data-page="MIP"      aria-selected="false" aria-controls="page-MIP"      onclick="showPage('MIP')">MIP</button>
+    <button class="nav-tab" role="tab" id="tab-6MAN"     data-page="6MAN"     aria-selected="false" aria-controls="page-6MAN"     onclick="showPage('6MAN')">6th Man</button>
+    <button class="nav-tab" role="tab" id="tab-EOY"      data-page="EOY"      aria-selected="false" aria-controls="page-EOY"      onclick="showPage('EOY')">EOY</button>
+    <button class="nav-tab" role="tab" id="tab-CLTC"     data-page="CLTC"     aria-selected="false" aria-controls="page-CLTC"     onclick="showPage('CLTC')">Clutch</button>
+  </div>
+  <button id="theme-toggle" class="theme-toggle" onclick="cycleTheme()" aria-label="Tema: Auto">Auto</button>
 </nav>
 
 <!-- OVERVIEW PAGE -->
-<div class="page active" id="page-overview">
+<div class="page active" id="page-overview" role="tabpanel" aria-labelledby="tab-overview">
   <div class="page-header">
-    <h1>NBA <span>Awards</span></h1>
+    <h1 class="ag-hero">NBA <em>Awards</em></h1>
     <p>Premios individuales por franquicia · datos en vivo desde Google Sheets</p>
+    <span id="ag-date-badge" class="ag-date-badge" style="display:none"></span>
   </div>
 
   <div class="legend">
@@ -289,10 +408,10 @@ footer a { color: var(--accent); text-decoration: none; }
 
   <div class="controls">
     <div class="search-wrap">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="ov-search" placeholder="Buscar equipo…" oninput="ovFilter()" />
+      <svg aria-hidden="true" focusable="false" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="ov-search" placeholder="Buscar equipo…" aria-label="Buscar equipo" oninput="ovFilter()" />
     </div>
-    <select id="ov-prize" onchange="ovFilter()">
+    <select id="ov-prize" aria-label="Filtrar por premio" onchange="ovFilter()">
       <option value="">Todos los premios</option>
       <option value="MVP">Con MVP</option>
       <option value="DPOY">Con DPOY</option>
@@ -303,7 +422,7 @@ footer a { color: var(--accent); text-decoration: none; }
       <option value="EOY">Con EOY</option>
       <option value="CLTC">Con Clutch</option>
     </select>
-    <select id="ov-miss" onchange="ovFilter()">
+    <select id="ov-miss" aria-label="Filtrar por estado de colección" onchange="ovFilter()">
       <option value="">Todos</option>
       <option value="complete">Colección completa</option>
       <option value="missing">Con faltantes</option>
@@ -320,17 +439,17 @@ footer a { color: var(--accent); text-decoration: none; }
     <table id="ov-table">
       <thead>
         <tr>
-          <th onclick="ovSort('team')" id="th-team">Equipo</th>
-          <th onclick="ovSort('MVP')" id="th-MVP" style="color:var(--c-MVP)">MVP</th>
-          <th onclick="ovSort('DPOY')" id="th-DPOY" style="color:var(--c-DPOY)">DPOY</th>
-          <th onclick="ovSort('ROY')" id="th-ROY" style="color:var(--c-ROY)">ROY</th>
-          <th onclick="ovSort('COY')" id="th-COY" style="color:var(--c-COY)">COY</th>
-          <th onclick="ovSort('MIP')" id="th-MIP" style="color:var(--c-MIP)">MIP</th>
-          <th onclick="ovSort('6MAN')" id="th-6MAN" style="color:var(--c-6MAN)">6th</th>
-          <th onclick="ovSort('EOY')" id="th-EOY" style="color:var(--c-EOY)">EOY</th>
-          <th onclick="ovSort('CLTC')" id="th-CLTC" style="color:var(--c-CLTC)">CLT</th>
-          <th onclick="ovSort('TOTAL')" id="th-TOTAL" class="sorted">Total</th>
-          <th onclick="ovSort('year')" id="th-year">Último</th>
+          <th onclick="ovSort('team')" id="th-team" aria-sort="none">Equipo</th>
+          <th onclick="ovSort('MVP')" id="th-MVP" style="color:var(--c-MVP)" aria-sort="none">MVP</th>
+          <th onclick="ovSort('DPOY')" id="th-DPOY" style="color:var(--c-DPOY)" aria-sort="none">DPOY</th>
+          <th onclick="ovSort('ROY')" id="th-ROY" style="color:var(--c-ROY)" aria-sort="none">ROY</th>
+          <th onclick="ovSort('COY')" id="th-COY" style="color:var(--c-COY)" aria-sort="none">COY</th>
+          <th onclick="ovSort('MIP')" id="th-MIP" style="color:var(--c-MIP)" aria-sort="none">MIP</th>
+          <th onclick="ovSort('6MAN')" id="th-6MAN" style="color:var(--c-6MAN)" aria-sort="none">6th</th>
+          <th onclick="ovSort('EOY')" id="th-EOY" style="color:var(--c-EOY)" aria-sort="none">EOY</th>
+          <th onclick="ovSort('CLTC')" id="th-CLTC" style="color:var(--c-CLTC)" aria-sort="none">CLT</th>
+          <th onclick="ovSort('TOTAL')" id="th-TOTAL" class="sorted" aria-sort="descending">Total</th>
+          <th onclick="ovSort('year')" id="th-year" aria-sort="none">Último</th>
           <th>Faltantes</th>
         </tr>
       </thead>
@@ -342,25 +461,46 @@ footer a { color: var(--accent); text-decoration: none; }
 </div>
 
 <!-- AWARD PAGES (MVP, DPOY, etc.) -->
-<div class="page" id="page-MVP"></div>
-<div class="page" id="page-DPOY"></div>
-<div class="page" id="page-ROY"></div>
-<div class="page" id="page-COY"></div>
-<div class="page" id="page-MIP"></div>
-<div class="page" id="page-6MAN"></div>
-<div class="page" id="page-EOY"></div>
-<div class="page" id="page-CLTC"></div>
+<div class="page" id="page-MVP"  role="tabpanel" aria-labelledby="tab-MVP"></div>
+<div class="page" id="page-DPOY" role="tabpanel" aria-labelledby="tab-DPOY"></div>
+<div class="page" id="page-ROY"  role="tabpanel" aria-labelledby="tab-ROY"></div>
+<div class="page" id="page-COY"  role="tabpanel" aria-labelledby="tab-COY"></div>
+<div class="page" id="page-MIP"  role="tabpanel" aria-labelledby="tab-MIP"></div>
+<div class="page" id="page-6MAN" role="tabpanel" aria-labelledby="tab-6MAN"></div>
+<div class="page" id="page-EOY"  role="tabpanel" aria-labelledby="tab-EOY"></div>
+<div class="page" id="page-CLTC" role="tabpanel" aria-labelledby="tab-CLTC"></div>
 
 <!-- DETAIL PANEL -->
 <div id="detail-overlay" onclick="closePanel(event)">
   <div id="detail-panel">
-    <button class="panel-close" onclick="closePanel()">✕ Cerrar</button>
+    <button class="panel-close" onclick="closePanel()" aria-label="Cerrar"><span aria-hidden="true">✕</span> Cerrar</button>
     <div id="panel-content"></div>
   </div>
 </div>
 
-<footer>
-  Datos desde <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRq7CVeGDmpkP17dqZBSe864F8fyBz3Xj9d5sKuokXb0Tbi4BdCmY1imHuwnKyGYGer1ZSrn31t-cJ1/pub?output=csv" target="_blank">Google Sheets</a> · NBA Awards Database
+<footer class="ag-footer">
+  <div class="ag-footer-brand">
+    <strong>Alejandro Gaitán</strong>
+    <span>Periodismo NBA en español</span>
+  </div>
+  <nav class="ag-footer-projects" aria-label="Otros proyectos">
+    <a href="https://alejandroggo.github.io/portfolio/" rel="noopener noreferrer">Portfolio</a>
+    <a href="https://alejandroggo.github.io/nba-rankings/" rel="noopener noreferrer">Rankings NBA</a>
+    <a href="https://alejandroggo.github.io/nba-offseason-2026/" rel="noopener noreferrer">Off-Season 2026</a>
+    <a href="https://alejandroggo.github.io/espanoles-nba/" rel="noopener noreferrer">Españoles en la NBA</a>
+    <a href="https://alejandroggo.github.io/NBA-espanol/" rel="noopener noreferrer">NBA en Español</a>
+  </nav>
+  <nav class="ag-footer-pubs" aria-label="Publicaciones">
+    <a href="https://alejandroggo.substack.com" rel="noopener noreferrer">Substack</a>
+    <a href="https://www.relevo.com/autor/alejandro-gaitan-5475.html" rel="noopener noreferrer">Relevo</a>
+    <a href="https://www.gigantes.com" rel="noopener noreferrer">Gigantes</a>
+    <a href="https://alejandrogaitan.com" rel="noopener noreferrer">alejandrogaitan.com</a>
+  </nav>
+  <div class="ag-footer-meta">
+    <span>© Alejandro Gaitán</span>
+    <span>Última actualización: <time id="ag-last-update" datetime=""></time></span>
+    <span class="ag-footer-data">Datos: <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRq7CVeGDmpkP17dqZBSe864F8fyBz3Xj9d5sKuokXb0Tbi4BdCmY1imHuwnKyGYGer1ZSrn31t-cJ1/pub?output=csv" rel="noopener noreferrer">Google Sheets</a> · NBA Awards Database</span>
+  </div>
 </footer>
 
 <script>
@@ -417,10 +557,27 @@ function parseCSV(text) {
 
 function num(v) { const n = parseInt(v); return isNaN(n) ? 0 : n; }
 
+// ─── LAST UPDATE DATE ─────────────────────────────────────────────────────────
+const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function setUpdateDate(raw) {
+  if (!raw) return;
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return;
+  const visible = `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  const iso = d.toISOString().slice(0, 10);
+  const timeEl = document.getElementById('ag-last-update');
+  if (timeEl) { timeEl.textContent = visible; timeEl.setAttribute('datetime', iso); }
+  const badge = document.getElementById('ag-date-badge');
+  if (badge) { badge.textContent = `Datos a: ${visible}`; badge.style.display = 'inline-block'; }
+}
+
 // ─── OVERVIEW ────────────────────────────────────────────────────────────────
 async function loadOverview() {
   try {
-    const text = await fetchCSV('');
+    const _r = await fetch(BASE);
+    if (!_r.ok) throw new Error(`HTTP ${_r.status}`);
+    setUpdateDate(_r.headers.get('Last-Modified'));
+    const text = await _r.text();
     const rows = parseCSV(text);
     // Normalize: strip accents, uppercase, no spaces
     const norm = s => s.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s/g,'');
@@ -520,7 +677,8 @@ function ovRender() {
       ? `<span class="complete-badge">✓ Completo</span>`
       : `<span style="color:var(--danger);font-weight:500">${r.missingCount}</span> <span style="color:var(--muted);font-size:12px">${r.missingList}</span>`;
 
-    return `<tr onclick="openPanel('${r.team.replace(/'/g,"\\'")}')">
+    const _esc = r.team.replace(/'/g,"\\'");
+    return `<tr tabindex="0" onclick="openPanel('${_esc}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPanel('${_esc}');}">
       <td class="team-name">${r.team}</td>
       ${aCells}
       <td class="total-n">${r.total}</td>
@@ -564,9 +722,9 @@ function ovSort(key) {
   document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
   const sb = document.getElementById('sb-'+key);
   if (sb) { sb.classList.add('active'); sb.textContent = key.toUpperCase().replace('TEAM','A–Z') + (ovSortDir===-1?' ↓':' ↑'); }
-  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  document.querySelectorAll('thead th[aria-sort]').forEach(th => { th.classList.remove('sorted'); th.setAttribute('aria-sort', 'none'); });
   const th = document.getElementById('th-'+key);
-  if (th) th.classList.add('sorted');
+  if (th) { th.classList.add('sorted'); th.setAttribute('aria-sort', ovSortDir === -1 ? 'descending' : 'ascending'); }
   ovRender();
 }
 
@@ -590,7 +748,7 @@ async function loadAwardPage(award) {
     <div class="award-page-header">
       <div class="award-dot" style="background:${color}"></div>
       <div>
-        <div class="award-page-title" style="color:${color}">${award}</div>
+        <h1 class="award-page-title" style="color:${color}">${award}</h1>
         <div style="color:var(--muted);font-size:13px">${AWARD_LABEL[award]}</div>
       </div>
     </div>
@@ -775,14 +933,44 @@ function closePanel(e) {
 // ─── NAV ──────────────────────────────────────────────────────────────────────
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
   document.getElementById('page-'+name).classList.add('active');
-  document.querySelector(`.nav-tab[data-page="${name}"]`).classList.add('active');
+  const activeTab = document.querySelector(`.nav-tab[data-page="${name}"]`);
+  activeTab.classList.add('active');
+  activeTab.setAttribute('aria-selected', 'true');
 
   if (name !== 'overview' && !loaded[name]) {
     loadAwardPage(name);
   }
 }
+
+// ─── THEME ────────────────────────────────────────────────────────────────────
+const THEME_CYCLE = ['auto','light','dark'];
+const THEME_TEXT  = { auto:'Auto', light:'Claro', dark:'Oscuro' };
+const THEME_ICONS = {
+  auto:  `<svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+  light: `<svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`,
+  dark:  `<svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+};
+let _themePref = 'auto';
+const _mqDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme(pref) {
+  _themePref = pref;
+  const resolved = pref === 'auto' ? (_mqDark.matches ? 'dark' : 'light') : pref;
+  document.documentElement.dataset.theme = resolved;
+  try { localStorage.setItem('ag-theme', pref); } catch(e) {}
+  const btn = document.getElementById('theme-toggle');
+  if (btn) { btn.innerHTML = `${THEME_ICONS[pref]} ${THEME_TEXT[pref]}`; btn.setAttribute('aria-label', `Tema: ${THEME_TEXT[pref]}`); }
+}
+
+function cycleTheme() {
+  applyTheme(THEME_CYCLE[(THEME_CYCLE.indexOf(_themePref) + 1) % THEME_CYCLE.length]);
+}
+
+_mqDark.addEventListener('change', () => { if (_themePref === 'auto') applyTheme('auto'); });
+try { _themePref = localStorage.getItem('ag-theme') || 'auto'; } catch(e) {}
+applyTheme(_themePref);
 
 // ─── INIT ──────────────────────────────────────────────────────────────────────
 loadOverview();
