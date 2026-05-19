@@ -616,7 +616,12 @@ async function loadOverview() {
     console.log('Headers:', rawHeaders);
     console.log('Indices:', {iTeam, iMVP, iDPOY, iROY, iCOY, iMIP, i6MAN, iEOY, iCLTC, iTOTAL, iULTIMO, iANO, iMISSING, iMISSLST});
 
-    ovData = rows.slice(1).filter(r => (r[tIdx]||'').trim()).map(r => {
+    ovData = rows.slice(1).filter(r => {
+      const t = (r[tIdx]||'').trim();
+      if (!t) return false;
+      if (/^totales?$/i.test(t)) return false;
+      return true;
+    }).map(r => {
       const awards = {};
       AWARDS.forEach(a => { awards[a] = colMap[a] !== -1 ? num(r[colMap[a]] || '') : 0; });
       const total = iTOTAL !== -1 ? num(r[iTOTAL] || '') : AWARDS.reduce((s,a) => s + awards[a], 0);
