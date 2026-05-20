@@ -692,14 +692,8 @@ function ovRender() {
 
 function ovFilter(returnData=false) {
   const q = document.getElementById('ov-search').value.toLowerCase();
-  const fp = document.getElementById('ov-prize').value;
-  const fm = document.getElementById('ov-miss').value;
   const d = ovData.filter(r => {
     if (q && !r.team.toLowerCase().includes(q)) return false;
-    if (fp && r.awards[fp] === 0) return false;
-    if (fm === 'complete' && r.missingCount > 0) return false;
-    if (fm === 'missing' && r.missingCount === 0) return false;
-    if (fm === 'none' && r.total > 0) return false;
     return true;
   });
   if (returnData) return d;
