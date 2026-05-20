@@ -629,7 +629,9 @@ async function loadOverview() {
       // ÚLTIMO: prize in col, year in col+1
       let lastPrize = '', lastYear = 0;
       if (iULTIMO !== -1) {
-        lastPrize = (r[iULTIMO] || '').trim();
+        const rawPrize = (r[iULTIMO] || '').trim().toUpperCase().replace(/\s/g,'');
+        const prizeAlias = { '6M':'6MAN','6TH':'6MAN','6THM':'6MAN','6THMAN':'6MAN','CLT':'CLTC','CLUTCH':'CLTC' };
+        lastPrize = prizeAlias[rawPrize] || rawPrize;
         if (iANO !== -1) lastYear = parseInt(r[iANO] || '') || 0;
       }
 
