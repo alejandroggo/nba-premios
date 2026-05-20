@@ -298,6 +298,16 @@ td:first-child { text-align: left; }
 }
 .chip .yr { color: var(--text-muted); font-size: 11px; margin-left: var(--space-1); }
 .chip .yr-count { color: var(--accent); font-size: 11px; font-weight: 600; margin-left: var(--space-1); }
+.player-chip { cursor: pointer; }
+.player-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+/* ═══ PLAYER PANEL ════════════════════════════════════════════════════════════ */
+.player-win-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
+.player-win-row:last-child { border-bottom: none; }
+.player-win-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: var(--radius-full); color: #000; flex-shrink: 0; min-width: 52px; text-align: center; }
+.player-win-detail { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.player-win-team { font-size: var(--font-sm); font-weight: 500; }
+.player-win-years { font-size: var(--font-xs); color: var(--text-muted); }
 
 /* ═══ LEGEND ══════════════════════════════════════════════════════════════════ */
 .legend { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }
@@ -844,9 +854,10 @@ async function loadAwardPage(award) {
 
     tbody.innerHTML = awardData[award].map(r => {
       const chips = r.winners.map(w => {
-        if (!w.years.length) return `<span class="chip">${w.name}</span>`;
-        if (w.years.length === 1) return `<span class="chip">${w.name}<span class="yr">(${w.years[0]})</span></span>`;
-        return `<span class="chip">${w.name}<span class="yr-count">x${w.years.length}</span><span class="yr">(${w.years.join(', ')})</span></span>`;
+        const attr = `class="chip player-chip" data-player="${w.name.replace(/"/g,'&quot;')}"`;
+        if (!w.years.length) return `<span ${attr}>${w.name}</span>`;
+        if (w.years.length === 1) return `<span ${attr}>${w.name}<span class="yr">(${w.years[0]})</span></span>`;
+        return `<span ${attr}>${w.name}<span class="yr-count">x${w.years.length}</span><span class="yr">(${w.years.join(', ')})</span></span>`;
       }).join('');
 
       return `<tr>
@@ -938,6 +949,60 @@ function closePanel(e) {
   document.getElementById('detail-overlay').classList.remove('open');
   document.body.style.overflow = '';
 }
+
+async function openPlayerPanel(playerName) {
+  const overlay = document.getElementById('detail-overlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('panel-content').innerHTML = `
+    <div class="panel-team">${playerName}</div>
+    <div class="loader" style="padding:2rem"><div class="spinner"></div>Buscando premios…</div>`;
+
+  await loadAllAwardData();
+
+  const wins = [];
+  AWARDS.forEach(award => {
+    (awardData[award] || []).forEach(teamData => {
+      teamData.winners.forEach(w => {
+        if (w.name.toLowerCase() === playerName.toLowerCase()) {
+          wins.push({ award, team: teamData.team, years: w.years });
+        }
+      });
+    });
+  });
+
+  if (!wins.length) {
+    document.getElementById('panel-content').innerHTML = `
+      <div class="panel-team">${playerName}</div>
+      <div class="panel-sub">No se encontraron premios registrados.</div>`;
+    return;
+  }
+
+  const totalWins = wins.reduce((s, w) => s + Math.max(w.years.length, 1), 0);
+
+  const winsHtml = wins.map(w => {
+    const count = w.years.length;
+    const yearsText = count ? w.years.join(', ') : '—';
+    const countLabel = count > 1 ? ` <strong>x${count}</strong>` : '';
+    return `<div class="player-win-row">
+      <span class="player-win-badge" style="background:${COLORS[w.award]}">${w.award}</span>
+      <div class="player-win-detail">
+        <span class="player-win-team">${w.team}</span>
+        <span class="player-win-years">${yearsText}${countLabel}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('panel-content').innerHTML = `
+    <div class="panel-team">${playerName}</div>
+    <div class="panel-sub">${totalWins} premio${totalWins !== 1 ? 's' : ''} en total</div>
+    <div style="margin-top:var(--space-6)">${winsHtml}</div>`;
+}
+
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.player-chip');
+  if (chip) openPlayerPanel(chip.dataset.player);
+});
 
 // ─── NAV ──────────────────────────────────────────────────────────────────────
 function showPage(name) {
