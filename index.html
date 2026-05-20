@@ -422,23 +422,6 @@ tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px;
       <svg aria-hidden="true" focusable="false" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" id="ov-search" placeholder="Buscar equipo…" aria-label="Buscar equipo" oninput="ovFilter()" />
     </div>
-    <select id="ov-prize" aria-label="Filtrar por premio" onchange="ovFilter()">
-      <option value="">Todos los premios</option>
-      <option value="MVP">Con MVP</option>
-      <option value="DPOY">Con DPOY</option>
-      <option value="ROY">Con ROY</option>
-      <option value="COY">Con COY</option>
-      <option value="MIP">Con MIP</option>
-      <option value="6MAN">Con 6th Man</option>
-      <option value="EOY">Con EOY</option>
-      <option value="CLTC">Con Clutch</option>
-    </select>
-    <select id="ov-miss" aria-label="Filtrar por estado de colección" onchange="ovFilter()">
-      <option value="">Todos</option>
-      <option value="complete">Colección completa</option>
-      <option value="missing">Con faltantes</option>
-      <option value="none">Sin ningún premio</option>
-    </select>
     <button class="sort-btn active" id="sb-TOTAL" onclick="ovSort('TOTAL')">Total ↓</button>
     <button class="sort-btn" id="sb-team" onclick="ovSort('team')">A–Z ↕</button>
     <button class="sort-btn" id="sb-missing" onclick="ovSort('missing')">Faltantes ↕</button>
