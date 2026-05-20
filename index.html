@@ -317,8 +317,8 @@ td:first-child { text-align: left; }
 
 /* ═══ FOOTER ══════════════════════════════════════════════════════════════════ */
 .ag-footer {
-  display: flex; flex-wrap: wrap; gap: var(--space-8);
-  align-items: flex-start; justify-content: space-between;
+  display: grid; grid-template-columns: max-content 1fr 1fr max-content;
+  gap: var(--space-8); align-items: start;
   padding: var(--space-8) var(--space-6);
   background: var(--surface); border-top: 1px solid var(--border);
   margin-top: var(--space-8); font-size: var(--font-sm); color: var(--text-muted);
@@ -375,8 +375,9 @@ tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px;
   .nav-tab { height: 48px; }
   thead th { top: 48px; }
   .panel-awards-grid { grid-template-columns: repeat(4,1fr); }
-  .ag-footer { flex-direction: column; gap: var(--space-6); }
-  .ag-footer-meta { text-align: left; }
+  .ag-footer { grid-template-columns: 1fr 1fr; gap: var(--space-6); }
+  .ag-footer-brand { grid-column: 1 / -1; }
+  .ag-footer-meta { grid-column: 1 / -1; text-align: left; }
 }
 </style>
 </head>
