@@ -297,6 +297,7 @@ td:first-child { text-align: left; }
   color: var(--text); white-space: nowrap;
 }
 .chip .yr { color: var(--text-muted); font-size: 11px; margin-left: var(--space-1); }
+.chip .yr-count { color: var(--accent); font-size: 11px; font-weight: 600; margin-left: var(--space-1); }
 
 /* ═══ LEGEND ══════════════════════════════════════════════════════════════════ */
 .legend { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }
@@ -841,11 +842,11 @@ async function loadAwardPage(award) {
     awardData[award].sort((a,b) => b.count - a.count);
 
     tbody.innerHTML = awardData[award].map(r => {
-      const chips = r.winners.map(w =>
-        w.years.length
-          ? w.years.map(y => `<span class="chip">${w.name}<span class="yr">${y}</span></span>`).join('')
-          : `<span class="chip">${w.name}</span>`
-      ).join('');
+      const chips = r.winners.map(w => {
+        if (!w.years.length) return `<span class="chip">${w.name}</span>`;
+        if (w.years.length === 1) return `<span class="chip">${w.name}<span class="yr">(${w.years[0]})</span></span>`;
+        return `<span class="chip">${w.name}<span class="yr-count">x${w.years.length}</span><span class="yr">(${w.years.join(', ')})</span></span>`;
+      }).join('');
 
       return `<tr>
         <td style="font-weight:500;font-size:14px">${r.team}</td>
