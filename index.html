@@ -519,7 +519,7 @@ const COLORS = { MVP:'#e8c84a', DPOY:'#4aaee8', ROY:'#4ae89a', COY:'#e87a4a', MI
 let ovData = [];         // overview rows
 let awardData = {};      // { MVP: [{team, winners:[{name,years}], count}] }
 let ovSortKey = 'TOTAL';
-let ovSortDir = -1;
+let ovSortDir = 1;
 const loaded = {};       // track which pages loaded
 
 // ─── CSV FETCH ────────────────────────────────────────────────────────────────
@@ -717,7 +717,7 @@ function ovSort(key) {
   if (ovSortKey === key) ovSortDir *= -1; else { ovSortKey = key; ovSortDir = -1; }
   document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
   const sb = document.getElementById('sb-'+key);
-  if (sb) { sb.classList.add('active'); sb.textContent = key.toUpperCase().replace('TEAM','A–Z') + (ovSortDir===-1?' ↓':' ↑'); }
+  if (sb) { sb.classList.add('active'); sb.textContent = key.toUpperCase().replace('TEAM','A–Z') + (ovSortDir===1?' ↓':' ↑'); }
   document.querySelectorAll('thead th[aria-sort]').forEach(th => { th.classList.remove('sorted'); th.setAttribute('aria-sort', 'none'); });
   const th = document.getElementById('th-'+key);
   if (th) { th.classList.add('sorted'); th.setAttribute('aria-sort', ovSortDir === -1 ? 'descending' : 'ascending'); }
